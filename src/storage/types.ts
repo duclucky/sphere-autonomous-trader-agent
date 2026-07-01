@@ -115,10 +115,20 @@ export interface ExecuteValueTransferRequest {
   intent: MarketIntent;
   decision: Decision;
   idempotencyKey: string;
+  walletSwap?: WalletSwapPlan;
 }
 
 export interface ExecuteValueTransferResult {
   txId: string;
   status: ExecutionRecord["status"];
   note: string;
+}
+
+export interface WalletSwapPlan {
+  fromToken: string;
+  toToken: string;
+  fromAmount: number;
+  toAmount: string;
+  rate: number;
+  recipient: string;
 }

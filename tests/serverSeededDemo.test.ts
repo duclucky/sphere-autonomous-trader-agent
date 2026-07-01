@@ -57,6 +57,15 @@ describe("server seeded wallet demo", () => {
     expect(options.maxRuns).toBe(1);
   });
 
+  it("defaults backend demo transfers to a wallet swap from BTC to UCT", () => {
+    const options = loadServerSeededDemoOptions({}, config);
+
+    expect(options.token).toBe("BTC");
+    expect(options.fromToken).toBe("BTC");
+    expect(options.toToken).toBe("UCT");
+    expect(options.counterparty).toBe("sphere-swap");
+  });
+
   it("records twenty autonomous executions into legacy telemetry", async () => {
     const store = new LocalStore(":memory:");
     const adapter = createAdapter();
@@ -72,7 +81,10 @@ describe("server seeded wallet demo", () => {
         amount: 1,
         dailyCap: 20,
         counterparty: "@autointent-trader",
-        token: testTokenSymbol
+        token: "BTC",
+        fromToken: "BTC",
+        toToken: testTokenSymbol,
+        rate: 1
       },
       runId: "server-run"
     });
@@ -97,14 +109,17 @@ describe("server seeded wallet demo", () => {
       amount: 1,
       dailyCap: 5,
       counterparty: "@autointent-trader",
-      token: "UNICITY"
+      token: "BTC",
+      fromToken: "BTC",
+      toToken: "UCT",
+      rate: 1
     });
 
     expect(decision.allowed).toBe(false);
     expect(decision.reason).toContain("daily cap");
   });
 
-  it("accepts named tokens in real server demo because payments.send can resolve symbols", () => {
+  it("accepts named tokens in real server demo because wallet swap can resolve symbols", () => {
     const decision = validateServerSeededDemoStart(config, {
       enabled: true,
       executions: 20,
@@ -112,13 +127,16 @@ describe("server seeded wallet demo", () => {
       amount: 1,
       dailyCap: 20,
       counterparty: "@autointent-trader",
-      token: testTokenSymbol
+      token: "BTC",
+      fromToken: "BTC",
+      toToken: testTokenSymbol,
+      rate: 1
     });
 
     expect(decision.allowed).toBe(true);
   });
 
-  it("preserves the configured token symbol on the transfer request", async () => {
+  it("passes a wallet swap plan to the execution adapter", async () => {
     const store = new LocalStore(":memory:");
     const adapter = createAdapter();
 
@@ -132,14 +150,25 @@ describe("server seeded wallet demo", () => {
         maxRuns: 1,
         amount: 1,
         dailyCap: 1,
-        counterparty: "@autointent-trader",
-        token: testTokenSymbol
+        counterparty: "sphere-swap",
+        token: "BTC",
+        fromToken: "BTC",
+        toToken: testTokenSymbol,
+        rate: 2
       },
       runId: "server-run-symbol"
     });
 
     expect(result.status).toBe("complete");
-    expect(adapter.requests[0].intent.token).toBe(testTokenSymbol);
+    expect(adapter.requests[0].intent.token).toBe("BTC");
+    expect(adapter.requests[0].walletSwap).toEqual({
+      fromToken: "BTC",
+      toToken: testTokenSymbol,
+      fromAmount: 1,
+      toAmount: "2",
+      rate: 2,
+      recipient: "sphere-swap"
+    });
   });
 
   it("stops and records a failed execution when the backend wallet errors", async () => {
@@ -157,7 +186,10 @@ describe("server seeded wallet demo", () => {
         amount: 1,
         dailyCap: 20,
         counterparty: "@autointent-trader",
-        token: testTokenSymbol
+        token: "BTC",
+        fromToken: "BTC",
+        toToken: testTokenSymbol,
+        rate: 1
       },
       runId: "server-run-fail"
     });

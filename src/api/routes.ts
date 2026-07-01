@@ -10,6 +10,7 @@ export function createRoutes(runtime: AgentRuntime): Router {
 
   router.get("/status", (_req, res) => {
     const state = runtime.store.getState();
+    const serverDemo = loadServerSeededDemoOptions(process.env, runtime.config);
     res.json({
       running: state.running,
       mode: runtime.config.mode,
@@ -23,7 +24,18 @@ export function createRoutes(runtime: AgentRuntime): Router {
         allowedTokens: runtime.config.allowedTokens,
         spendingCapPerRun: runtime.config.spendingCapPerRun,
         spendingCapPerDay: runtime.config.spendingCapPerDay,
-        counterparty: runtime.config.agentNametag.startsWith("@") ? runtime.config.agentNametag : `@${runtime.config.agentNametag}`
+        counterparty: serverDemo.counterparty,
+        serverDemo: {
+          enabled: serverDemo.enabled,
+          executions: serverDemo.executions,
+          amount: serverDemo.amount,
+          dailyCap: serverDemo.dailyCap,
+          counterparty: serverDemo.counterparty,
+          token: serverDemo.token,
+          fromToken: serverDemo.fromToken,
+          toToken: serverDemo.toToken,
+          rate: serverDemo.rate
+        }
       }
     });
   });

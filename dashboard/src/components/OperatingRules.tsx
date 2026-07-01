@@ -12,15 +12,16 @@ export function OperatingRules({ status }: OperatingRulesProps) {
   const sourceWallet = status.wallet?.nametag ?? "Render seeded wallet";
   const walletAddress = status.wallet?.address ?? "waiting for backend wallet";
   const modeLabel = status.mode === "real" ? "REAL TESTNET" : "DRY-RUN";
+  const swapPair = `${status.config.serverDemo.fromToken}->${status.config.serverDemo.toToken}`;
   const rules = [
     { label: "Run gate", value: status.running ? "RUNNING" : "IDLE", detail: "The backend starts only when the operator clicks Run Backend Agent." },
     { label: "Network", value: status.config.network, detail: "Only Testnet v2 is allowed." },
-    { label: "Mode", value: modeLabel, detail: "Real mode moves testnet value; dry-run stays simulated." },
+    { label: "Mode", value: modeLabel, detail: "Real mode performs the same send + mint flow used by the Sphere wallet swap screen." },
     { label: "Source wallet", value: sourceWallet, detail: walletAddress },
-    { label: "Token selection", value: status.config.allowedTokens.join(", "), detail: "The backend resolves a spendable coin object from wallet inventory before each send." },
-    { label: "Spend cap", value: `${formatCap(status.config.spendingCapPerRun)} / ${formatCap(status.config.spendingCapPerDay)} daily`, detail: "Agent must stay within run and daily limits." },
-    { label: "Execution size", value: `${status.config.maxTradeAmount} max trade`, detail: "Each execution stays within the configured amount ceiling." },
-    { label: "Counterparty", value: status.config.counterparty, detail: "Telemetry should match the configured destination and logs should show the same target." }
+    { label: "Swap pair", value: swapPair, detail: `Allowed scan tokens: ${status.config.allowedTokens.join(", ")}. Backend swap input is ${status.config.serverDemo.fromToken}.` },
+    { label: "Swap recipient", value: status.config.serverDemo.counterparty, detail: "The input token is sent to the same swap stub used by the wallet UI." },
+    { label: "Quote rule", value: `${status.config.serverDemo.rate} ${status.config.serverDemo.toToken} per ${status.config.serverDemo.fromToken}`, detail: `Minimum configured edge is ${(status.config.minProfitThreshold * 100).toFixed(2)}%.` },
+    { label: "Execution size", value: `${status.config.serverDemo.amount} base unit each`, detail: `${status.config.serverDemo.executions} max swaps; demo cap is ${formatCap(status.config.serverDemo.dailyCap)}.` }
   ];
 
   return (
@@ -43,7 +44,7 @@ export function OperatingRules({ status }: OperatingRulesProps) {
       </div>
       <div className="rule-trace">
         <strong>Trace format</strong>
-        <span>Every log row now includes a rule tag when the backend emits one, so you can map behavior back to the gate that allowed or blocked it.</span>
+        <span>Logs should move through RUN_GATE, SWAP_SUBMITTED, and RUN_COMPLETE; failures include the token pair and coin id that caused the stop.</span>
       </div>
     </section>
   );

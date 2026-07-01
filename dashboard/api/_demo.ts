@@ -26,7 +26,18 @@ export function statusPayload() {
       allowedTokens: ["UNICITY", "USDC"],
       spendingCapPerRun: 100,
       spendingCapPerDay: 250,
-      counterparty: "@counterparty-alpha"
+      counterparty: "@counterparty-alpha",
+      serverDemo: {
+        enabled: false,
+        executions: 20,
+        amount: 1,
+        dailyCap: 20,
+        counterparty: "sphere-swap",
+        token: "BTC",
+        fromToken: "BTC",
+        toToken: "UCT",
+        rate: 1
+      }
     }
   };
 }
@@ -35,25 +46,25 @@ export function intentsPayload() {
   return [
     {
       id: "vercel-demo-profitable-negotiate",
-      counterparty: "@counterparty-alpha",
+      counterparty: "sphere-swap",
       side: "sell",
-      token: "UNICITY",
-      amount: 40,
-      price: 0.96,
-      fairValue: 1,
-      keywords: ["arbitrage", "unicity", "swap"],
+      token: "BTC",
+      amount: 1,
+      price: 1,
+      fairValue: 1.03,
+      keywords: ["wallet-swap", "testnet"],
       updatedAt: now(),
       riskScore: 0.18
     },
     {
       id: "vercel-demo-missing-counterparty",
-      counterparty: "unknown-counterparty",
+      counterparty: "sphere-swap",
       side: "sell",
-      token: "UNICITY",
+      token: "ETH",
       amount: 10,
       price: 0.9,
       fairValue: 1,
-      keywords: ["real-market-safety"],
+      keywords: ["below-threshold"],
       updatedAt: now(),
       riskScore: 0.12
     }
@@ -65,17 +76,17 @@ export function decisionsPayload() {
     {
       id: "vercel-demo-decision-negotiate",
       intentId: "vercel-demo-profitable-negotiate",
-      action: "NEGOTIATE",
-      reason: "Selected: expected spread 4.2% > MIN_PROFIT_THRESHOLD",
-      expectedProfitPct: 0.042,
+      action: "EXECUTE_DIRECTLY",
+      reason: "Wallet swap rule passed: BTC->UCT, amount within cap, configured edge >= threshold",
+      expectedProfitPct: 0.03,
       createdAt: now()
     },
     {
       id: "vercel-demo-decision-ignore",
       intentId: "vercel-demo-missing-counterparty",
       action: "IGNORE",
-      reason: "Skipped: counterparty is not resolvable",
-      expectedProfitPct: 0.11,
+      reason: "Skipped: configured edge is below MIN_PROFIT_THRESHOLD",
+      expectedProfitPct: -0.1,
       createdAt: now()
     }
   ];
@@ -86,9 +97,9 @@ export function negotiationsPayload() {
     {
       id: "vercel-demo-negotiation-outbound",
       intentId: "vercel-demo-profitable-negotiate",
-      counterparty: "@counterparty-alpha",
+      counterparty: "sphere-swap",
       direction: "outbound",
-      body: "Agent sphere-agent-demo proposes an autonomous dry-run trade. This Vercel endpoint is mock/demo only.",
+      body: "Agent prepares wallet swap preview: send BTC to sphere-swap, mint UCT output.",
       status: "simulated",
       mode: "dry-run",
       createdAt: now()
@@ -96,9 +107,9 @@ export function negotiationsPayload() {
     {
       id: "vercel-demo-negotiation-inbound",
       intentId: "vercel-demo-profitable-negotiate",
-      counterparty: "@counterparty-alpha",
+      counterparty: "sphere-swap",
       direction: "inbound",
-      body: "Simulated acceptance from @counterparty-alpha.",
+      body: "Simulated wallet swap output minted.",
       status: "accepted",
       mode: "dry-run",
       createdAt: now()
@@ -116,11 +127,11 @@ export function executionsPayload() {
       mode: "dry-run",
       txId: "dry-run-tx_vercel_demo",
       status: "simulated",
-      token: "UNICITY",
-      amount: 40,
-      counterparty: "@counterparty-alpha",
+      token: "BTC->UCT",
+      amount: 1,
+      counterparty: "sphere-swap",
       createdAt: now(),
-      note: "Vercel mock API record. No real testnet value moved."
+      note: "Vercel mock wallet swap preview. Render backend performs send + mintFungibleToken."
     }
   ];
 }
@@ -130,8 +141,8 @@ export function logsPayload() {
     {
       id: "vercel-demo-log-1",
       level: "info",
-      rule: "DEMO_TRACE",
-      message: "Vercel mock API active. Dashboard is connected to demo serverless endpoints.",
+      rule: "SWAP_PREVIEW",
+      message: "Vercel mock API active. Real Render backend runs wallet swap automation.",
       createdAt: now()
     },
     {

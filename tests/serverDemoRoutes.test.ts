@@ -57,13 +57,52 @@ function delay(ms: number) {
 }
 
 describe("server seeded demo route", () => {
+  it("exposes the effective server demo rules in status", async () => {
+    process.env.ENABLE_SERVER_DEMO = "true";
+    process.env.MAX_EXECUTIONS_PER_SERVER_DEMO = "20";
+    process.env.SERVER_DEMO_AMOUNT = "1";
+    process.env.SERVER_DEMO_DAILY_CAP = "20";
+    process.env.SERVER_DEMO_SWAP_RECIPIENT = "sphere-swap";
+    process.env.SERVER_DEMO_FROM_TOKEN = "BTC";
+    process.env.SERVER_DEMO_TO_TOKEN = testTokenSymbol;
+    process.env.SERVER_DEMO_SWAP_RATE = "2";
+
+    const app = express();
+    app.use("/api", createRoutes({
+      config,
+      store: new LocalStore(":memory:"),
+      agent: { start() {}, stop() {} },
+      adapter: failingAdapter()
+    } as never));
+    const server = app.listen(0);
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("test server did not bind to a port");
+    const url = `http://127.0.0.1:${address.port}/api/status`;
+
+    try {
+      const response = await fetch(url);
+      const body = await response.json() as { config: { serverDemo: { token: string; fromToken: string; toToken: string; amount: number; counterparty: string; rate: number } } };
+
+      expect(response.status).toBe(200);
+      expect(body.config.serverDemo.token).toBe("BTC");
+      expect(body.config.serverDemo.fromToken).toBe("BTC");
+      expect(body.config.serverDemo.toToken).toBe(testTokenSymbol);
+      expect(body.config.serverDemo.amount).toBe(1);
+      expect(body.config.serverDemo.counterparty).toBe("sphere-swap");
+      expect(body.config.serverDemo.rate).toBe(2);
+    } finally {
+      await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    }
+  });
+
   it("does not consume the run limit when the backend wallet fails before any successful execution", async () => {
     process.env.ENABLE_SERVER_DEMO = "true";
     process.env.SERVER_DEMO_MAX_RUNS = "1";
     process.env.MAX_EXECUTIONS_PER_SERVER_DEMO = "20";
     process.env.SERVER_DEMO_AMOUNT = "1";
     process.env.SERVER_DEMO_DAILY_CAP = "20";
-    process.env.SERVER_DEMO_TOKEN = testTokenSymbol;
+    process.env.SERVER_DEMO_FROM_TOKEN = "BTC";
+    process.env.SERVER_DEMO_TO_TOKEN = testTokenSymbol;
 
     const adapter = failingAdapter();
     const app = express();

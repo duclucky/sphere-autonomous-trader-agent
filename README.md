@@ -2,7 +2,7 @@
 
 Autonomous economic agent for the Unicity Builder Program, track: Autonomous Agents.
 
-The agent monitors Sphere market intents, scores opportunities against budget and risk rules, negotiates through direct messages, and executes value-moving actions when allowed. In `dry-run` mode it uses fixtures and mock transactions only. In `real` mode it uses verified Sphere SDK surfaces from `@unicitylabs/sphere-sdk` v0.11.0: `Sphere.init`, `createNodeProviders`, `createWalletApiProviders`, `sphere.market.search`, `sphere.communications.sendDM`, `sphere.payments.send`, and `sphere.swap.proposeSwap`.
+The agent monitors Sphere market intents, scores opportunities against budget and risk rules, negotiates through direct messages, and executes value-moving actions when allowed. In `dry-run` mode it uses fixtures and mock transactions only. In backend seeded real mode it follows the Sphere wallet swap screen flow through verified SDK surfaces from `@unicitylabs/sphere-sdk` v0.11.0: `Sphere.init`, `createNodeProviders`, `createWalletApiProviders`, `sphere.payments.send`, and `sphere.payments.mintFungibleToken`.
 
 ## Why It Is Agentic
 
@@ -25,7 +25,6 @@ npm run demo:dry
 - `SPHERE_WALLET_API_BASE_URL`
 - `SPHERE_ORACLE_API_KEY`
 - `SPHERE_DEVICE_ID`
-- `SPHERE_ESCROW_ADDRESS`
 - `MAX_TRADE_AMOUNT`
 - `MIN_PROFIT_THRESHOLD`
 - `SCAN_INTERVAL_SECONDS`
@@ -46,53 +45,31 @@ npm run dev
 
 `npm run dev` starts the local API at `http://127.0.0.1:8787` and dashboard at `http://127.0.0.1:5173`.
 
-## Reviewer Wallet Demo
+## Dashboard Demo
 
-The deployed dashboard is reviewer-first. It renders without a localhost backend and lets reviewers connect a Sphere wallet through Sphere Connect v2.
+The deployed dashboard is backend-first. It renders without a localhost backend and exposes one primary action: `Run Backend Agent`. Reviewers do not connect a browser wallet or configure per-run values in the UI; the Render backend reads the server-side environment variables and publishes telemetry for inspection.
 
 Reviewer flow:
 
 1. Open the Vercel app URL.
-2. Click `Connect Wallet` in the header or hero.
-3. Approve the Sphere Connect session in the wallet.
-4. Confirm the dashboard shows wallet address, nametag or identity, Testnet v2 network, balance, transport, and signing capability.
-5. Select `Dry-run demo` or `Real testnet demo`.
-6. Set strict limits: max trade amount, max executions, daily cap, allowed token/testnet coin symbol or coin id, and destination/counterparty.
-7. Click `Start Reviewer Demo`.
-8. Watch the flow: Connect Wallet -> Configure Limits -> Start Agent -> Scan Intent -> Decide -> Negotiate -> Execute -> Show Proof.
+2. Confirm the status pill shows the configured Render backend mode.
+3. Click `Run Backend Agent`.
+4. Watch the flow: Load Server Wallet -> Apply Defaults -> Start Agent -> Scan Balance -> Decide -> Build Swap -> Send Input -> Mint Output -> Write Telemetry.
+5. Compare Operating Rules with Agent Telemetry and Live Logs.
 
 Backend seeded wallet flow:
 
 1. Deploy the Render backend with `SPHERE_MODE=real`, `SPHERE_WALLET_SEED`, and `ENABLE_SERVER_DEMO=true`.
 2. Set Vercel `VITE_API_BASE_URL` to the Render service URL.
 3. Open the Vercel dashboard and click `Run Backend Agent`.
-4. The Render backend uses the server-side seeded wallet to run up to 20 autonomous executions and writes intents, decisions, negotiations, executions, and logs into Legacy agent telemetry.
-
-### Dry-run Demo
-
-Dry-run mode does not require a connected wallet and never moves value. Intent scan, decision, negotiation, execution, and proof are simulated and labeled `DRY-RUN` or `DEMO`.
-
-### Real Testnet Demo
-
-Real testnet mode uses verified Sphere Connect v2 surfaces from `@unicitylabs/sphere-sdk` v0.11.0:
-
-- `autoConnect`
-- `SPHERE_NETWORKS.testnet2`
-- `sphere_getIdentity`
-- `sphere_getBalance`
-- `sphere_getAssets`
-- `payment_request` or `send` compatible wallet intent surfaces
-
-The current reviewer flow executes a tiny `payment_request` intent through the connected wallet when policy allows it. Live intent discovery and negotiation are demo-labeled unless a live counterparty is configured. The value-moving wallet intent is labeled `REAL TESTNET`.
-
-Wallet security may require approval for each real intent. The agent still decides autonomously when to request execution after the reviewer configures limits and clicks Start.
+4. The Render backend uses the server-side seeded wallet to run up to 20 autonomous wallet swap actions and writes intents, decisions, negotiations, executions, and logs into Agent Telemetry.
 
 ### Backend Seeded Wallet Demo
 
-The `Run Backend Agent` button calls the Render backend route `POST /api/server-demo/start`. This mode does not connect a reviewer wallet. It uses the server-side `SPHERE_WALLET_SEED` already configured on Render and writes directly to the legacy telemetry tables.
+The `Run Backend Agent` button calls the Render backend route `POST /api/server-demo/start`. This mode does not connect a reviewer wallet. It uses the server-side `SPHERE_WALLET_SEED` already configured on Render and writes directly to the telemetry tables.
 
 Backend seeded mode is disabled unless `ENABLE_SERVER_DEMO=true` is set on the backend. The route is capped by `MAX_EXECUTIONS_PER_SERVER_DEMO` with a hard maximum of 20, and `SERVER_DEMO_MAX_RUNS` defaults to 1 per backend process to prevent repeated public triggering.
-Before each send, the backend inspects the wallet inventory and picks a spendable coin object for the configured token symbol, so it can move on to the next funded coin object when one runs out.
+Each action builds a configured wallet swap plan, sends the input token to the wallet swap stub recipient, then mints the output token into the same backend wallet. Before the send step, the backend inspects wallet inventory and picks a spendable coin object for the configured input symbol, so it can move on to the next funded coin object when one runs out.
 
 ### Safety Limits
 
@@ -162,8 +139,10 @@ Set Render environment variables:
 - `SERVER_DEMO_MAX_RUNS=1`
 - `SERVER_DEMO_AMOUNT=1`
 - `SERVER_DEMO_DAILY_CAP=20`
-- `SERVER_DEMO_COUNTERPARTY=@autointent-trader`
-- `SERVER_DEMO_TOKEN=UCT` or another token symbol/coin id accepted by the SDK
+- `SERVER_DEMO_SWAP_RECIPIENT=sphere-swap`
+- `SERVER_DEMO_FROM_TOKEN=BTC`
+- `SERVER_DEMO_TO_TOKEN=UCT`
+- `SERVER_DEMO_SWAP_RATE=1`
 
 After Render deploys, open `https://your-render-service.onrender.com/api/status`. Then set the same service URL in Vercel as `VITE_API_BASE_URL`.
 
@@ -171,9 +150,9 @@ After Render deploys, open `https://your-render-service.onrender.com/api/status`
 
 Real mode requires a valid wallet mnemonic in `SPHERE_WALLET_SEED`. The SDK docs identify `testnet`/`testnet2` as the v2 network aliases; this project keeps the user-facing env value `testnet-v2` and maps it to SDK `testnet2`.
 
-Value movement is testnet-ready only through verified SDK calls. If `SPHERE_ESCROW_ADDRESS` is set, execution prefers `sphere.swap.proposeSwap`; otherwise it falls back to `sphere.payments.send`.
+Backend seeded value movement follows the same practical flow used by the Sphere wallet swap screen: send the input asset to `sphere-swap`, then self-mint the output asset with `mintFungibleToken`. This is not the P2P escrow `swap.proposeSwap` flow and does not require `SPHERE_ESCROW_ADDRESS`.
 
-The deployed dashboard has two real testnet paths. `Start Reviewer Demo` uses the reviewer's connected wallet through Sphere Connect. `Run Backend Agent` uses the Render server-side `SPHERE_WALLET_SEED`. Keep all seeds only in `.env` or Render environment variables; never expose them as `VITE_` variables.
+The deployed dashboard's primary real testnet path is `Run Backend Agent`, which uses the Render server-side `SPHERE_WALLET_SEED`. Keep all seeds only in `.env` or Render environment variables; never expose them as `VITE_` variables.
 
 ## Safety
 

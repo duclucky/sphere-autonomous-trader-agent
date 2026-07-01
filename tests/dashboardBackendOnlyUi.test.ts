@@ -18,8 +18,9 @@ describe("backend-only dashboard UI", () => {
   });
 
   it("presents the single backend seeded wallet action", () => {
-    expect(reviewerPanelSource).toContain("Backend Seeded Autonomous Agent");
+    expect(reviewerPanelSource).toContain("Backend Seeded Wallet Swap Agent");
     expect(reviewerPanelSource.match(/Run Backend Agent/g)).toHaveLength(1);
+    expect(reviewerPanelSource).toContain("send + mint");
     expect(appSource).toContain("Agent Telemetry");
     expect(appSource).toContain("OperatingRules");
     expect(operatingRulesSource).toContain("Operating Rules");

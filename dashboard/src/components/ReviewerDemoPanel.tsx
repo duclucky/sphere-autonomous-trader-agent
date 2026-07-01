@@ -13,28 +13,30 @@ interface ReviewerDemoPanelProps {
 const backendDefaults = [
   ["Network", "Testnet v2"],
   ["Wallet", "Render seeded wallet"],
-  ["Executions", "20 max per run"],
-  ["Amount", "1 base unit each"],
+  ["Swap flow", "BTC -> UCT"],
+  ["Action", "send + mint"],
+  ["Amount", "1 base unit input"],
   ["Daily cap", "20 base units"],
-  ["Token / counterparty", "Configured on Render"]
+  ["Recipient", "sphere-swap"]
 ];
 
 const initialSteps: AgentFlowStep[] = [
   "Load Server Wallet",
   "Apply Defaults",
   "Start Agent",
-  "Scan Intent",
+  "Scan Balance",
   "Decide",
-  "Negotiate",
-  "Execute",
+  "Build Swap",
+  "Send Input",
+  "Mint Output",
   "Write Telemetry"
 ].map((label) => ({ label, status: "idle", mode: "REAL TESTNET" }));
 
 function runningSteps(): AgentFlowStep[] {
   return initialSteps.map((step) => ({
     ...step,
-    status: step.label === "Execute" ? "active" : "complete",
-    mode: step.label === "Scan Intent" || step.label === "Negotiate" ? "AGENT" : "REAL TESTNET"
+    status: step.label === "Send Input" || step.label === "Mint Output" ? "active" : "complete",
+    mode: step.label === "Scan Balance" || step.label === "Build Swap" ? "AGENT" : "REAL TESTNET"
   }));
 }
 
@@ -42,14 +44,14 @@ function completeSteps(): AgentFlowStep[] {
   return initialSteps.map((step) => ({
     ...step,
     status: "complete",
-    mode: step.label === "Scan Intent" || step.label === "Negotiate" ? "AGENT" : "REAL TESTNET"
+    mode: step.label === "Scan Balance" || step.label === "Build Swap" ? "AGENT" : "REAL TESTNET"
   }));
 }
 
 function blockedSteps(): AgentFlowStep[] {
   return initialSteps.map((step) => ({
     ...step,
-    status: step.label === "Execute" ? "blocked" : "complete",
+    status: step.label === "Send Input" || step.label === "Mint Output" ? "blocked" : "complete",
     mode: "REAL TESTNET"
   }));
 }
@@ -58,7 +60,7 @@ export function ReviewerDemoPanel({ onStartServerDemo }: ReviewerDemoPanelProps)
   const [steps, setSteps] = useState<AgentFlowStep[]>(initialSteps);
   const [running, setRunning] = useState(false);
   const [statusText, setStatusText] = useState("READY");
-  const [message, setMessage] = useState("Press the button once. The Render backend uses the configured server-side Sphere seed and writes telemetry below.");
+  const [message, setMessage] = useState("Press the button once. The Render backend uses the configured server-side Sphere seed to run the wallet swap flow and write telemetry below.");
   const [isError, setIsError] = useState(false);
 
   const startBackendAgent = async () => {
@@ -78,7 +80,7 @@ export function ReviewerDemoPanel({ onStartServerDemo }: ReviewerDemoPanelProps)
     try {
       const response = await onStartServerDemo();
       setStatusText("EXECUTION COMPLETE");
-      setMessage(response.message ?? `Backend agent queued ${response.requested ?? 20} real testnet execution(s). Check Agent Telemetry below.`);
+      setMessage(response.message ?? `Backend agent queued ${response.requested ?? 20} wallet swap action(s). Check Agent Telemetry below.`);
       setSteps(completeSteps());
     } catch (error) {
       setStatusText("BACKEND BLOCKED");
@@ -99,9 +101,9 @@ export function ReviewerDemoPanel({ onStartServerDemo }: ReviewerDemoPanelProps)
             <img src="/branding/logo.png" alt="" />
             <span>AutoIntent Trader</span>
           </div>
-          <h1>Backend Seeded Autonomous Agent</h1>
+          <h1>Backend Seeded Wallet Swap Agent</h1>
           <p>
-            One-click real Testnet v2 run from the Render backend wallet seed. No browser wallet connection or manual settings are needed.
+            One-click Testnet v2 run from the Render backend wallet seed. The agent selects the configured pair, sends input to the swap stub, mints output, and records proof.
           </p>
           <div className="hero-actions">
             <button disabled={running} onClick={startBackendAgent} type="button">
@@ -118,7 +120,7 @@ export function ReviewerDemoPanel({ onStartServerDemo }: ReviewerDemoPanelProps)
         <div className="backend-agent-copy">
           <h2>Backend Agent</h2>
           <p className="muted">
-            The agent uses defaults from Render environment variables, executes from the server wallet, and fills the telemetry tables automatically.
+            The agent uses defaults from Render environment variables, executes the Sphere wallet swap flow from the server wallet, and fills the telemetry tables automatically.
           </p>
           <p className={isError ? "inline-error" : "proof-note"}>{message}</p>
         </div>
@@ -136,7 +138,7 @@ export function ReviewerDemoPanel({ onStartServerDemo }: ReviewerDemoPanelProps)
       <div className="panel-block flow-block">
         <div className="status-line">
           <strong>{statusText}</strong>
-          <span>Backend seeded mode runs autonomously from the Render wallet seed and publishes proof through telemetry.</span>
+          <span>Backend seeded mode runs the wallet swap flow autonomously from the Render wallet seed and publishes proof through telemetry.</span>
         </div>
         <AgentFlow steps={steps} />
       </div>

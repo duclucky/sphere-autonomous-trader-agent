@@ -15,6 +15,17 @@ export interface StatusResponse {
     spendingCapPerRun: number;
     spendingCapPerDay: number;
     counterparty: string;
+    serverDemo: {
+      enabled: boolean;
+      executions: number;
+      amount: number;
+      dailyCap: number;
+      counterparty: string;
+      token: string;
+      fromToken: string;
+      toToken: string;
+      rate: number;
+    };
   };
 }
 
@@ -83,19 +94,30 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
       allowedTokens: ["UNICITY", "USDC"],
       spendingCapPerRun: 100,
       spendingCapPerDay: 250,
-      counterparty: "@counterparty-alpha"
+      counterparty: "@counterparty-alpha",
+      serverDemo: {
+        enabled: false,
+        executions: 20,
+        amount: 1,
+        dailyCap: 20,
+        counterparty: "sphere-swap",
+        token: "BTC",
+        fromToken: "BTC",
+        toToken: "UCT",
+        rate: 1
+      }
     }
   };
   const intents: MarketIntent[] = [
     {
       id: "demo-profitable-intent",
-      counterparty: "@counterparty-alpha",
+      counterparty: "sphere-swap",
       side: "sell",
-      token: "UNICITY",
-      amount: 40,
-      price: 0.96,
-      fairValue: 1,
-      keywords: ["arbitrage", "swap"],
+      token: "BTC",
+      amount: 1,
+      price: 1,
+      fairValue: 1.03,
+      keywords: ["wallet-swap", "testnet"],
       updatedAt: now,
       riskScore: 0.18
     }
@@ -104,9 +126,9 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
     {
       id: "demo-decision",
       intentId: "demo-profitable-intent",
-      action: "NEGOTIATE",
-      reason: "Selected: expected spread 4.2% > MIN_PROFIT_THRESHOLD",
-      expectedProfitPct: 0.042,
+      action: "EXECUTE_DIRECTLY",
+      reason: "Wallet swap rule passed: BTC->UCT, amount within cap, configured edge >= threshold",
+      expectedProfitPct: 0.03,
       createdAt: now
     }
   ];
@@ -114,9 +136,9 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
     {
       id: "demo-negotiation",
       intentId: "demo-profitable-intent",
-      counterparty: "@counterparty-alpha",
+      counterparty: "sphere-swap",
       direction: "outbound",
-      body: "Demo dry-run negotiation message. This legacy table uses simulated sample data on Vercel.",
+      body: "Demo wallet swap prepared: send BTC to sphere-swap and mint UCT output.",
       status: "simulated",
       mode: "dry-run",
       createdAt: now
@@ -131,19 +153,19 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
       mode: "dry-run",
       txId: "dry-run-tx_demo",
       status: "simulated",
-      token: "UNICITY",
-      amount: 40,
-      counterparty: "@counterparty-alpha",
+      token: "BTC->UCT",
+      amount: 1,
+      counterparty: "sphere-swap",
       createdAt: now,
-      note: "Static demo record. No testnet value moved."
+      note: "Static wallet swap preview. Real backend sends input token then mints output token."
     }
   ];
   const logs: LogEntry[] = [
     {
       id: "demo-log",
       level: "info",
-      rule: "DEMO_TRACE",
-      message: "Reviewer demo is running client-side; legacy agent tables show simulated sample data.",
+      rule: "SWAP_PREVIEW",
+      message: "Static preview: backend wallet swap automation uses send + mintFungibleToken on Render.",
       createdAt: now
     }
   ];

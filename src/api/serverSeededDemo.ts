@@ -11,6 +11,9 @@ export interface ServerSeededDemoOptions {
   dailyCap: number;
   counterparty: string;
   token: string;
+  fromToken: string;
+  toToken: string;
+  rate: number;
 }
 
 export interface ServerSeededDemoInput {
@@ -50,14 +53,19 @@ function normalizedCounterparty(value: string | undefined, config: AgentConfig):
 export function loadServerSeededDemoOptions(env: NodeJS.ProcessEnv, config: AgentConfig): ServerSeededDemoOptions {
   const executions = Math.min(hardMaxExecutions, Math.trunc(numberFromEnv(env.MAX_EXECUTIONS_PER_SERVER_DEMO, hardMaxExecutions)));
   const amount = numberFromEnv(env.SERVER_DEMO_AMOUNT, 1);
+  const fromToken = env.SERVER_DEMO_FROM_TOKEN?.trim() || env.SERVER_DEMO_TOKEN?.trim() || "BTC";
+  const toToken = env.SERVER_DEMO_TO_TOKEN?.trim() || "UCT";
   return {
     enabled: env.ENABLE_SERVER_DEMO === "true",
     executions,
     maxRuns: Math.trunc(numberFromEnv(env.SERVER_DEMO_MAX_RUNS, 1)),
     amount,
     dailyCap: numberFromEnv(env.SERVER_DEMO_DAILY_CAP, executions * amount),
-    counterparty: normalizedCounterparty(env.SERVER_DEMO_COUNTERPARTY, config),
-    token: env.SERVER_DEMO_TOKEN?.trim() || config.allowedTokens[0] || "UCT"
+    counterparty: env.SERVER_DEMO_SWAP_RECIPIENT?.trim() || normalizedCounterparty(env.SERVER_DEMO_COUNTERPARTY ?? "sphere-swap", config),
+    token: fromToken,
+    fromToken,
+    toToken,
+    rate: numberFromEnv(env.SERVER_DEMO_SWAP_RATE, 1)
   };
 }
 
@@ -70,6 +78,12 @@ export function validateServerSeededDemoStart(config: AgentConfig, options: Serv
   }
   if (options.amount * options.executions > options.dailyCap) {
     return { allowed: false, reason: "Server seeded demo daily cap would be exceeded." };
+  }
+  if (options.fromToken.trim().toUpperCase() === options.toToken.trim().toUpperCase()) {
+    return { allowed: false, reason: "Server seeded demo requires different swap input and output tokens." };
+  }
+  if (!Number.isFinite(options.rate) || options.rate <= 0) {
+    return { allowed: false, reason: "Server seeded demo swap rate must be positive." };
   }
   return { allowed: true };
 }
@@ -84,11 +98,11 @@ function makeIntent(input: ServerSeededDemoInput, index: number): MarketIntent {
     id: stableId("server-intent", `${input.runId}:${index}`),
     counterparty: input.options.counterparty,
     side: "sell",
-    token: input.options.token,
+    token: input.options.fromToken,
     amount: input.options.amount,
-    price: 1,
-    fairValue: 1 + input.config.minProfitThreshold,
-    keywords: ["server-seeded", "autonomous", "testnet"],
+    price: input.options.rate,
+    fairValue: input.options.rate * (1 + input.config.minProfitThreshold),
+    keywords: ["server-seeded", "autonomous", "wallet-swap", "testnet"],
     updatedAt: timestamp,
     riskScore: 0.1
   };
@@ -99,7 +113,7 @@ function makeDecision(input: ServerSeededDemoInput, intent: MarketIntent, index:
     id: stableId("server-decision", `${input.runId}:${index}`),
     intentId: intent.id,
     action: "EXECUTE_DIRECTLY",
-    reason: `Server seeded wallet agent selected execution ${index}/${input.options.executions} under deployer limits.`,
+    reason: `Wallet swap agent selected ${input.options.fromToken}->${input.options.toToken} execution ${index}/${input.options.executions}: configured rate ${input.options.rate} and deployer limits passed.`,
     expectedProfitPct: input.config.minProfitThreshold,
     createdAt: now()
   };
@@ -111,7 +125,7 @@ function makeNegotiation(input: ServerSeededDemoInput, intent: MarketIntent, ind
     intentId: intent.id,
     counterparty: intent.counterparty,
     direction: "outbound",
-    body: `Server seeded agent prepared autonomous execution ${index}/${input.options.executions}.`,
+    body: `Server seeded agent prepared wallet swap ${index}/${input.options.executions}: ${input.options.amount} ${input.options.fromToken} -> ${Math.trunc(input.options.amount * input.options.rate)} ${input.options.toToken}.`,
     status: "simulated",
     mode: input.config.mode,
     createdAt: now()
@@ -161,7 +175,19 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
     store.saveNegotiation(negotiation);
 
     try {
-      const result = await adapter.executeValueTransfer({ intent, decision, idempotencyKey });
+      const result = await adapter.executeValueTransfer({
+        intent,
+        decision,
+        idempotencyKey,
+        walletSwap: {
+          fromToken: options.fromToken,
+          toToken: options.toToken,
+          fromAmount: options.amount,
+          toAmount: String(Math.max(1, Math.trunc(options.amount * options.rate))),
+          rate: options.rate,
+          recipient: options.counterparty
+        }
+      });
       const execution: ExecutionRecord = {
         id: stableId("execution", idempotencyKey),
         intentId: intent.id,
@@ -170,7 +196,7 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
         mode: config.mode,
         txId: result.txId,
         status: result.status,
-        token: intent.token,
+        token: `${options.fromToken}->${options.toToken}`,
         amount: intent.amount,
         counterparty: intent.counterparty,
         createdAt: now(),
@@ -178,7 +204,7 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
       };
       store.saveExecution(execution);
       completed += 1;
-      store.saveLog({ id: stableId("log", `${runId}:${index}:submitted`), level: "info", rule: "EXECUTION_SUBMITTED", message: `Server seeded execution ${index}/${options.executions} submitted: ${result.txId}.`, createdAt: now() });
+      store.saveLog({ id: stableId("log", `${runId}:${index}:submitted`), level: "info", rule: "SWAP_SUBMITTED", message: `Server seeded wallet swap ${index}/${options.executions} submitted: ${result.txId}.`, createdAt: now() });
     } catch (error) {
       failed += 1;
       store.saveExecution(failedExecution(input, intent, decision, idempotencyKey, error));

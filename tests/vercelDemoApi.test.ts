@@ -6,7 +6,7 @@ describe("Vercel demo API payloads", () => {
     expect(statusPayload().mode).toBe("dry-run");
     expect(decisionsPayload().some((decision) => decision.action === "IGNORE")).toBe(true);
     expect(executionsPayload()[0].mode).toBe("dry-run");
-    expect(executionsPayload()[0].note).toContain("No real testnet value moved");
+    expect(executionsPayload()[0].note).toContain("wallet swap preview");
   });
 
   it("explains that backend seeded mode requires Render instead of Vercel fallback", () => {

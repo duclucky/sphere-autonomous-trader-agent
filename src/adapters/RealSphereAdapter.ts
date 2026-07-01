@@ -31,6 +31,7 @@ type SphereLike = {
   communications?: { sendDM(recipient: string, content: string): Promise<{ id: string }> };
   payments?: {
     send(request: { recipient: string; amount: string; coinId: string; memo?: string }): Promise<{ id?: string; status: string; deliveryPending?: boolean }>;
+    mintFungibleToken?(coinIdHex: string, amount: bigint): Promise<{ success: true; tokenId?: string } | { success: false; error: string }>;
     getAssets?(coinId?: string): Promise<SpendableCoinAsset[]>;
   };
   swap?: {
@@ -113,6 +114,10 @@ export class RealSphereAdapter implements SphereAdapter {
 
   async executeValueTransfer(request: ExecuteValueTransferRequest): Promise<ExecuteValueTransferResult> {
     const sphere = await this.getSphere();
+    if (request.walletSwap) {
+      return this.executeWalletSwap(sphere, request);
+    }
+
     if (this.config.escrowAddress && sphere.swap?.proposeSwap && sphere.identity?.directAddress) {
       const coinId = await this.resolveSpendableCoinId(sphere, request.intent.token, request.intent.amount);
       const swap = await sphere.swap.proposeSwap(
@@ -139,16 +144,61 @@ export class RealSphereAdapter implements SphereAdapter {
       this.failUnverified("RealSphereAdapter.executeValueTransfer");
     }
     const coinId = await this.resolveSpendableCoinId(sphere, request.intent.token, request.intent.amount);
-    const result = await sphere.payments.send({
-      recipient: request.intent.counterparty,
-      amount: String(Math.trunc(request.intent.amount)),
-      coinId,
-      memo: `Autonomous execution for ${request.intent.id}; idempotency=${request.idempotencyKey}`
-    });
+    let result: { id?: string; status: string; deliveryPending?: boolean };
+    try {
+      result = await sphere.payments.send({
+        recipient: request.intent.counterparty,
+        amount: String(Math.trunc(request.intent.amount)),
+        coinId,
+        memo: `Autonomous execution for ${request.intent.id}; idempotency=${request.idempotencyKey}`
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`${message}; token=${request.intent.token}; resolvedCoinId=${coinId}; amount=${Math.trunc(request.intent.amount)}`);
+    }
     return {
       txId: result.id ?? request.idempotencyKey,
       status: result.status === "completed" ? "confirmed" : "submitted",
-      note: result.deliveryPending ? "Certified by SDK send; mailbox delivery pending." : "Executed through Sphere payments.send."
+      note: result.deliveryPending ? `Certified by SDK send; mailbox delivery pending. coinId=${coinId}` : `Executed through Sphere payments.send. coinId=${coinId}`
+    };
+  }
+
+  private async executeWalletSwap(sphere: SphereLike, request: ExecuteValueTransferRequest): Promise<ExecuteValueTransferResult> {
+    if (!request.walletSwap) {
+      this.failUnverified("RealSphereAdapter.executeWalletSwap");
+    }
+    if (!sphere.payments?.send || !sphere.payments.mintFungibleToken) {
+      this.failUnverified("RealSphereAdapter.executeWalletSwap");
+    }
+
+    const plan = request.walletSwap;
+    const fromCoinId = await this.resolveSpendableCoinId(sphere, plan.fromToken, plan.fromAmount);
+    const toCoinId = await this.resolveRegistryCoinId(plan.toToken);
+    const fromAmount = String(Math.trunc(plan.fromAmount));
+    const toAmount = BigInt(plan.toAmount);
+    let sendResult: { id?: string; status: string; deliveryPending?: boolean };
+    try {
+      sendResult = await sphere.payments.send({
+        recipient: plan.recipient,
+        amount: fromAmount,
+        coinId: fromCoinId,
+        memo: `Autonomous wallet swap for ${request.intent.id}; idempotency=${request.idempotencyKey}; pair=${plan.fromToken}->${plan.toToken}`
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`${message}; swap=${plan.fromToken}->${plan.toToken}; fromCoinId=${fromCoinId}; amount=${fromAmount}`);
+    }
+
+    const mintResult = await sphere.payments.mintFungibleToken(toCoinId, toAmount);
+    if (!mintResult.success) {
+      throw new Error(`Wallet swap mint failed: ${mintResult.error}; swap=${plan.fromToken}->${plan.toToken}; toCoinId=${toCoinId}; amount=${plan.toAmount}`);
+    }
+
+    const txId = `${sendResult.id ?? request.idempotencyKey}+${mintResult.tokenId ?? toCoinId}`;
+    return {
+      txId,
+      status: sendResult.status === "completed" ? "confirmed" : "submitted",
+      note: `Wallet swap executed: sent ${fromAmount} ${plan.fromToken} to ${plan.recipient}, minted ${plan.toAmount} ${plan.toToken} at configured rate ${plan.rate}.`
     };
   }
 
@@ -201,6 +251,13 @@ export class RealSphereAdapter implements SphereAdapter {
       }
     }
     return preferredToken;
+  }
+
+  private async resolveRegistryCoinId(preferredToken: string): Promise<string> {
+    const { TokenRegistry } = await import("@unicitylabs/sphere-sdk");
+    const registry = TokenRegistry.getInstance();
+    const definition = registry.getDefinitionBySymbol?.(preferredToken);
+    return definition?.id ?? preferredToken;
   }
 
   private failUnverified(functionName: string): never {
