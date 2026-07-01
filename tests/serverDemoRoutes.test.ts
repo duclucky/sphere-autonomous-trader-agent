@@ -23,7 +23,7 @@ const config: AgentConfig = {
   spendingCapPerDay: 20
 };
 
-const testCoinId = "1111111111111111111111111111111111111111111111111111111111111111";
+const testTokenSymbol = "UCT";
 
 const originalEnv = { ...process.env };
 
@@ -63,7 +63,7 @@ describe("server seeded demo route", () => {
     process.env.MAX_EXECUTIONS_PER_SERVER_DEMO = "20";
     process.env.SERVER_DEMO_AMOUNT = "1";
     process.env.SERVER_DEMO_DAILY_CAP = "20";
-    process.env.SERVER_DEMO_TOKEN = testCoinId;
+    process.env.SERVER_DEMO_TOKEN = testTokenSymbol;
 
     const adapter = failingAdapter();
     const app = express();

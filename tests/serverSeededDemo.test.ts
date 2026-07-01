@@ -23,6 +23,7 @@ const config: AgentConfig = {
 };
 
 const testCoinId = "1111111111111111111111111111111111111111111111111111111111111111";
+const testTokenSymbol = "UCT";
 
 function createAdapter(failAt?: number): SphereAdapter & { requests: ExecuteValueTransferRequest[] } {
   const requests: ExecuteValueTransferRequest[] = [];
@@ -71,7 +72,7 @@ describe("server seeded wallet demo", () => {
         amount: 1,
         dailyCap: 20,
         counterparty: "@autointent-trader",
-        token: testCoinId
+        token: testTokenSymbol
       },
       runId: "server-run"
     });
@@ -103,7 +104,7 @@ describe("server seeded wallet demo", () => {
     expect(decision.reason).toContain("daily cap");
   });
 
-  it("rejects named tokens in real server demo because payments.send needs a 64-hex coin id", () => {
+  it("accepts named tokens in real server demo because payments.send can resolve symbols", () => {
     const decision = validateServerSeededDemoStart(config, {
       enabled: true,
       executions: 20,
@@ -111,11 +112,34 @@ describe("server seeded wallet demo", () => {
       amount: 1,
       dailyCap: 20,
       counterparty: "@autointent-trader",
-      token: "UNICITY"
+      token: testTokenSymbol
     });
 
-    expect(decision.allowed).toBe(false);
-    expect(decision.reason).toContain("64-hex coin id");
+    expect(decision.allowed).toBe(true);
+  });
+
+  it("preserves the configured token symbol on the transfer request", async () => {
+    const store = new LocalStore(":memory:");
+    const adapter = createAdapter();
+
+    const result = await runServerSeededDemo({
+      config,
+      store,
+      adapter,
+      options: {
+        enabled: true,
+        executions: 1,
+        maxRuns: 1,
+        amount: 1,
+        dailyCap: 1,
+        counterparty: "@autointent-trader",
+        token: testTokenSymbol
+      },
+      runId: "server-run-symbol"
+    });
+
+    expect(result.status).toBe("complete");
+    expect(adapter.requests[0].intent.token).toBe(testTokenSymbol);
   });
 
   it("stops and records a failed execution when the backend wallet errors", async () => {
@@ -133,7 +157,7 @@ describe("server seeded wallet demo", () => {
         amount: 1,
         dailyCap: 20,
         counterparty: "@autointent-trader",
-        token: testCoinId
+        token: testTokenSymbol
       },
       runId: "server-run-fail"
     });

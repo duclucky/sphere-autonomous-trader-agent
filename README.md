@@ -57,7 +57,7 @@ Reviewer flow:
 3. Approve the Sphere Connect session in the wallet.
 4. Confirm the dashboard shows wallet address, nametag or identity, Testnet v2 network, balance, transport, and signing capability.
 5. Select `Dry-run demo` or `Real testnet demo`.
-6. Set strict limits: max trade amount, max executions, daily cap, allowed token/testnet coin id, and destination/counterparty.
+6. Set strict limits: max trade amount, max executions, daily cap, allowed token/testnet coin symbol or coin id, and destination/counterparty.
 7. Click `Start Reviewer Demo`.
 8. Watch the flow: Connect Wallet -> Configure Limits -> Start Agent -> Scan Intent -> Decide -> Negotiate -> Execute -> Show Proof.
 
@@ -103,7 +103,7 @@ Real mode fails closed unless:
 - the amount is within `MAX_TRADE_AMOUNT`
 - max executions for the run is not exceeded
 - daily cap is not exceeded
-- the configured token is a 64-hex testnet coin id
+- the configured token is accepted by the SDK as a token symbol or a 64-hex coin id
 - the idempotency key has not executed before
 
 The browser never asks for or stores a private key or seed. `SPHERE_WALLET_SEED` is local/server-only and must never be exposed as a `VITE_` variable.
@@ -162,7 +162,7 @@ Set Render environment variables:
 - `SERVER_DEMO_AMOUNT=1`
 - `SERVER_DEMO_DAILY_CAP=20`
 - `SERVER_DEMO_COUNTERPARTY=@autointent-trader`
-- `SERVER_DEMO_TOKEN=<64-hex testnet coin id from the funded Render wallet>`
+- `SERVER_DEMO_TOKEN=UCT` or another token symbol/coin id accepted by the SDK
 
 After Render deploys, open `https://your-render-service.onrender.com/api/status`. Then set the same service URL in Vercel as `VITE_API_BASE_URL`.
 

@@ -36,7 +36,6 @@ export interface ServerSeededDemoStartDecision {
 }
 
 const hardMaxExecutions = 20;
-const coinIdPattern = /^[0-9a-f]{64}$/i;
 
 function numberFromEnv(value: string | undefined, fallback: number): number {
   const parsed = Number(value);
@@ -58,7 +57,7 @@ export function loadServerSeededDemoOptions(env: NodeJS.ProcessEnv, config: Agen
     amount,
     dailyCap: numberFromEnv(env.SERVER_DEMO_DAILY_CAP, executions * amount),
     counterparty: normalizedCounterparty(env.SERVER_DEMO_COUNTERPARTY, config),
-    token: env.SERVER_DEMO_TOKEN?.trim() || config.allowedTokens[0] || "UNICITY"
+    token: env.SERVER_DEMO_TOKEN?.trim() || config.allowedTokens[0] || "UCT"
   };
 }
 
@@ -71,9 +70,6 @@ export function validateServerSeededDemoStart(config: AgentConfig, options: Serv
   }
   if (options.amount * options.executions > options.dailyCap) {
     return { allowed: false, reason: "Server seeded demo daily cap would be exceeded." };
-  }
-  if (config.mode === "real" && !coinIdPattern.test(options.token)) {
-    return { allowed: false, reason: "Server seeded real testnet demo requires SERVER_DEMO_TOKEN to be a 64-hex coin id, not a token symbol." };
   }
   return { allowed: true };
 }
