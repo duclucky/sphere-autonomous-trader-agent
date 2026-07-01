@@ -141,6 +141,13 @@ export function logsPayload() {
   ];
 }
 
+export function serverDemoUnavailablePayload() {
+  return {
+    running: false,
+    message: "Backend seeded wallet mode requires the Render API. Set VITE_API_BASE_URL to your Render service URL."
+  };
+}
+
 export function json(res: ResponseLike, body: unknown, status = 200): void {
   res.setHeader("Cache-Control", "no-store");
   res.status(status).json(body);

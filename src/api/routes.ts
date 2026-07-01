@@ -1,8 +1,12 @@
 import { Router } from "express";
 import type { AgentRuntime } from "../createAgent";
+import { loadServerSeededDemoOptions, runServerSeededDemo, validateServerSeededDemoStart } from "./serverSeededDemo";
+import { newId } from "../utils/ids";
 
 export function createRoutes(runtime: AgentRuntime): Router {
   const router = Router();
+  let serverDemoRunning = false;
+  let serverDemoRunsStarted = 0;
 
   router.get("/status", (_req, res) => {
     const state = runtime.store.getState();
@@ -37,6 +41,36 @@ export function createRoutes(runtime: AgentRuntime): Router {
   router.post("/agent/stop", (_req, res) => {
     runtime.agent.stop();
     res.json({ running: false });
+  });
+
+  router.post("/server-demo/start", (_req, res) => {
+    const options = loadServerSeededDemoOptions(process.env, runtime.config);
+    if (!options.enabled) {
+      res.status(403).json({ running: false, message: "Server seeded demo is disabled. Set ENABLE_SERVER_DEMO=true on the backend." });
+      return;
+    }
+    if (serverDemoRunning) {
+      res.status(409).json({ running: true, message: "Server seeded demo is already running." });
+      return;
+    }
+    if (serverDemoRunsStarted >= options.maxRuns) {
+      res.status(429).json({ running: false, message: `Server seeded demo run limit reached (${options.maxRuns}). Increase SERVER_DEMO_MAX_RUNS or redeploy to run again.` });
+      return;
+    }
+    const startDecision = validateServerSeededDemoStart(runtime.config, options);
+    if (!startDecision.allowed) {
+      res.status(400).json({ running: false, message: startDecision.reason ?? "Server seeded demo is blocked." });
+      return;
+    }
+
+    const runId = newId("server-demo");
+    serverDemoRunning = true;
+    serverDemoRunsStarted += 1;
+    void runServerSeededDemo({ config: runtime.config, store: runtime.store, adapter: runtime.adapter, options, runId })
+      .finally(() => {
+        serverDemoRunning = false;
+      });
+    res.status(202).json({ running: true, runId, requested: options.executions });
   });
 
   return router;

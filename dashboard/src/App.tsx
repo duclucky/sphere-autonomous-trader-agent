@@ -6,7 +6,7 @@ import { IntentTable } from "./components/IntentTable";
 import { LogViewer } from "./components/LogViewer";
 import { NegotiationPanel } from "./components/NegotiationPanel";
 import { ReviewerDemoPanel } from "./components/ReviewerDemoPanel";
-import { demoDashboardState, fetchDashboardState, type StatusResponse } from "./api";
+import { demoDashboardState, fetchDashboardState, startServerSeededDemo, type StatusResponse } from "./api";
 import { backendOfflineMessage } from "./backendOffline";
 import type { Decision, ExecutionRecord, LogEntry, MarketIntent, NegotiationMessage } from "./types";
 import "./styles.css";
@@ -60,11 +60,15 @@ export default function App() {
 
       {error ? <div className="notice">{error}</div> : null}
 
-      <ReviewerDemoPanel />
+      <ReviewerDemoPanel onStartServerDemo={async () => {
+        const result = await startServerSeededDemo();
+        void refresh();
+        return result;
+      }} />
 
       <details className="legacy-telemetry">
         <summary>Legacy agent telemetry</summary>
-        <p className="muted">These tables are supporting telemetry. Use the Reviewer Demo panel above to start the reviewer flow.</p>
+        <p className="muted">These tables show backend agent telemetry. Use Run Backend Agent above to populate them from the Render seeded wallet.</p>
         <section className="grid two">
           <IntentTable intents={data.intents} />
           <DecisionTable decisions={data.decisions} />

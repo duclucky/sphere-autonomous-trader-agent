@@ -44,7 +44,7 @@ function proofRows(proof: ReviewerProof) {
   ];
 }
 
-export function ReviewerDemoPanel({ adapter }: { adapter?: SphereWalletAdapter }) {
+export function ReviewerDemoPanel({ adapter, onStartServerDemo }: { adapter?: SphereWalletAdapter; onStartServerDemo?: () => Promise<{ requested?: number; message?: string }> }) {
   const walletAdapter = useMemo(() => adapter ?? createRealSphereWalletAdapter(), [adapter]);
   const executionLedger = useRef(new Set<string>());
   const [wallet, setWallet] = useState<WalletConnectionState>(disconnectedWalletState());
@@ -93,6 +93,30 @@ export function ReviewerDemoPanel({ adapter }: { adapter?: SphereWalletAdapter }
     setStatusText(next.status === "complete" ? "EXECUTION COMPLETE" : "AGENT BLOCKED");
     setWallet(await walletAdapter.getState());
     setRunning(false);
+  };
+
+  const startBackendAgent = async () => {
+    if (!onStartServerDemo) {
+      setStatusText("BACKEND AGENT UNAVAILABLE");
+      return;
+    }
+    setRunning(true);
+    setResult(null);
+    setStatusText("BACKEND AGENT RUNNING");
+    setSteps(initialSteps.map((step) => ({ ...step, status: "complete", mode: step.label === "Scan Intent" || step.label === "Negotiate" ? "DEMO" : "REAL TESTNET" })));
+    try {
+      const response = await onStartServerDemo();
+      setStatusText(`BACKEND AGENT QUEUED ${response.requested ?? 20}`);
+    } catch (error) {
+      setStatusText("BACKEND AGENT BLOCKED");
+      setResult({
+        status: "blocked",
+        message: error instanceof Error ? error.message : "Backend seeded wallet agent could not start.",
+        steps: initialSteps.map((step) => ({ ...step, status: step.label === "Execute" ? "blocked" : "complete", mode: "REAL TESTNET" }))
+      });
+    } finally {
+      setRunning(false);
+    }
   };
 
   const stopDemo = () => {
@@ -155,7 +179,7 @@ export function ReviewerDemoPanel({ adapter }: { adapter?: SphereWalletAdapter }
 
         <div className="panel-block controls-block">
           <h2>Reviewer Demo</h2>
-          <p className="muted">Dry-run works immediately. Real testnet only needs wallet connect plus deployer-provided safe defaults.</p>
+          <p className="muted">Reviewer wallet mode asks the wallet for approval. Backend agent mode uses the deployer seeded wallet on Render and fills legacy telemetry.</p>
           <div className="segmented">
             <button className={mode === "dry-run" ? "selected" : ""} onClick={() => setMode("dry-run")} type="button">Dry-run demo</button>
             <button className={mode === "real-testnet" ? "selected" : ""} onClick={() => setMode("real-testnet")} type="button">Real testnet demo</button>
@@ -168,6 +192,7 @@ export function ReviewerDemoPanel({ adapter }: { adapter?: SphereWalletAdapter }
           <div className="button-row">
             <button className="secondary" onClick={useSafeDefaults} type="button">Use safe demo defaults</button>
             <button disabled={running || (mode === "real-testnet" && !realReady)} onClick={startDemo} type="button">Start Reviewer Demo</button>
+            <button className="secondary" disabled={running} onClick={startBackendAgent} type="button">Run Backend Agent</button>
             <button className="secondary" onClick={stopDemo} type="button">Stop Agent</button>
             <button className="ghost" onClick={resetDemo} type="button">Reset Demo State</button>
           </div>
@@ -209,7 +234,7 @@ export function ReviewerDemoPanel({ adapter }: { adapter?: SphereWalletAdapter }
       <div className="panel-block flow-block">
         <div className="status-line">
           <strong>{statusText}</strong>
-          <span>Reviewer approval is required by wallet security, but the agent independently decides when to request execution.</span>
+          <span>Backend seeded mode runs autonomously from the Render wallet seed; reviewer wallet mode keeps wallet approval as the checkpoint.</span>
         </div>
         <AgentFlow steps={steps} />
       </div>

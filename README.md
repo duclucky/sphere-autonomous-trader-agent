@@ -61,6 +61,13 @@ Reviewer flow:
 7. Click `Start Reviewer Demo`.
 8. Watch the flow: Connect Wallet -> Configure Limits -> Start Agent -> Scan Intent -> Decide -> Negotiate -> Execute -> Show Proof.
 
+Backend seeded wallet flow:
+
+1. Deploy the Render backend with `SPHERE_MODE=real`, `SPHERE_WALLET_SEED`, and `ENABLE_SERVER_DEMO=true`.
+2. Set Vercel `VITE_API_BASE_URL` to the Render service URL.
+3. Open the Vercel dashboard and click `Run Backend Agent`.
+4. The Render backend uses the server-side seeded wallet to run up to 20 autonomous executions and writes intents, decisions, negotiations, executions, and logs into Legacy agent telemetry.
+
 ### Dry-run Demo
 
 Dry-run mode does not require a connected wallet and never moves value. Intent scan, decision, negotiation, execution, and proof are simulated and labeled `DRY-RUN` or `DEMO`.
@@ -79,6 +86,12 @@ Real testnet mode uses verified Sphere Connect v2 surfaces from `@unicitylabs/sp
 The current reviewer flow executes a tiny `payment_request` intent through the connected wallet when policy allows it. Live intent discovery and negotiation are demo-labeled unless a live counterparty is configured. The value-moving wallet intent is labeled `REAL TESTNET`.
 
 Wallet security may require approval for each real intent. The agent still decides autonomously when to request execution after the reviewer configures limits and clicks Start.
+
+### Backend Seeded Wallet Demo
+
+The `Run Backend Agent` button calls the Render backend route `POST /api/server-demo/start`. This mode does not connect a reviewer wallet. It uses the server-side `SPHERE_WALLET_SEED` already configured on Render and writes directly to the legacy telemetry tables.
+
+Backend seeded mode is disabled unless `ENABLE_SERVER_DEMO=true` is set on the backend. The route is capped by `MAX_EXECUTIONS_PER_SERVER_DEMO` with a hard maximum of 20, and `SERVER_DEMO_MAX_RUNS` defaults to 1 per backend process to prevent repeated public triggering.
 
 ### Safety Limits
 
@@ -143,6 +156,13 @@ Set Render environment variables:
 - `SCAN_INTERVAL_SECONDS=10`
 - `SPENDING_CAP_PER_RUN=1`
 - `SPENDING_CAP_PER_DAY=5`
+- `ENABLE_SERVER_DEMO=true`
+- `MAX_EXECUTIONS_PER_SERVER_DEMO=20`
+- `SERVER_DEMO_MAX_RUNS=1`
+- `SERVER_DEMO_AMOUNT=1`
+- `SERVER_DEMO_DAILY_CAP=20`
+- `SERVER_DEMO_COUNTERPARTY=@autointent-trader`
+- `SERVER_DEMO_TOKEN=UNICITY`
 
 After Render deploys, open `https://your-render-service.onrender.com/api/status`. Then set the same service URL in Vercel as `VITE_API_BASE_URL`.
 
@@ -152,7 +172,7 @@ Real mode requires a valid wallet mnemonic in `SPHERE_WALLET_SEED`. The SDK docs
 
 Value movement is testnet-ready only through verified SDK calls. If `SPHERE_ESCROW_ADDRESS` is set, execution prefers `sphere.swap.proposeSwap`; otherwise it falls back to `sphere.payments.send`.
 
-For the deployed reviewer demo, real testnet execution does not use `SPHERE_WALLET_SEED`; it uses the reviewer's connected wallet through Sphere Connect. For local seeded agent demos, keep secrets only in `.env` on the server/operator machine.
+The deployed dashboard has two real testnet paths. `Start Reviewer Demo` uses the reviewer's connected wallet through Sphere Connect. `Run Backend Agent` uses the Render server-side `SPHERE_WALLET_SEED`. Keep all seeds only in `.env` or Render environment variables; never expose them as `VITE_` variables.
 
 ## Safety
 

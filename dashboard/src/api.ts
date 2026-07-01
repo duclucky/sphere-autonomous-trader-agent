@@ -21,7 +21,7 @@ async function getJson<T>(path: string): Promise<T> {
   const url = withApiBaseUrl(path);
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(`GET ${path} failed: ${res.status}`);
+    throw new Error(`GET ${path} failed: ${res.status}${await errorDetail(res)}`);
   }
   return res.json() as Promise<T>;
 }
@@ -30,9 +30,19 @@ async function postJson<T>(path: string): Promise<T> {
   const url = withApiBaseUrl(path);
   const res = await fetch(url, { method: "POST" });
   if (!res.ok) {
-    throw new Error(`POST ${path} failed: ${res.status}`);
+    throw new Error(`POST ${path} failed: ${res.status}${await errorDetail(res)}`);
   }
   return res.json() as Promise<T>;
+}
+
+async function errorDetail(res: Response): Promise<string> {
+  try {
+    const body = await res.json() as { message?: unknown; error?: unknown };
+    const message = typeof body.message === "string" ? body.message : typeof body.error === "string" ? body.error : "";
+    return message ? `: ${message}` : "";
+  } catch {
+    return "";
+  }
 }
 
 export async function fetchDashboardState(): Promise<AgentState & { status: StatusResponse }> {
@@ -49,6 +59,7 @@ export async function fetchDashboardState(): Promise<AgentState & { status: Stat
 
 export const startAgent = () => postJson<{ running: boolean }>("/api/agent/start");
 export const stopAgent = () => postJson<{ running: boolean }>("/api/agent/stop");
+export const startServerSeededDemo = () => postJson<{ running: boolean; runId?: string; requested?: number; message?: string }>("/api/server-demo/start");
 
 export function demoDashboardState(): AgentState & { status: StatusResponse } {
   const now = new Date().toISOString();
