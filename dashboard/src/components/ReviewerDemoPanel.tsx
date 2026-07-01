@@ -6,7 +6,8 @@ import { disconnectedWalletState } from "../wallet/types";
 import { createRealSphereWalletAdapter } from "../wallet/realSphereWalletAdapter";
 import { AgentFlow } from "./AgentFlow";
 
-const defaultCoinId = import.meta.env.VITE_SPHERE_TESTNET_COIN_ID ?? "";
+const fallbackDemoCoinId = "1111111111111111111111111111111111111111111111111111111111111111";
+const defaultCoinId = import.meta.env.VITE_SPHERE_TESTNET_COIN_ID || fallbackDemoCoinId;
 const defaultCounterparty = import.meta.env.VITE_SPHERE_DEMO_COUNTERPARTY ?? "@autointent-trader";
 const safeDefaultLimits: ReviewerLimits = {
   maxTradeAmount: 0.01,
