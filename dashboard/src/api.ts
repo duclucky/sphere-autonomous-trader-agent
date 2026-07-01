@@ -100,7 +100,7 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
       intentId: "demo-profitable-intent",
       counterparty: "@counterparty-alpha",
       direction: "outbound",
-      body: "Demo dry-run negotiation message. Backend is offline, so this is static sample data.",
+      body: "Demo dry-run negotiation message. This legacy table uses simulated sample data on Vercel.",
       status: "simulated",
       mode: "dry-run",
       createdAt: now
@@ -125,8 +125,8 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
   const logs: LogEntry[] = [
     {
       id: "demo-log",
-      level: "warn",
-      message: "Backend offline. Showing demo data for Vercel/static preview.",
+      level: "info",
+      message: "Reviewer demo is running client-side; legacy agent tables show simulated sample data.",
       createdAt: now
     }
   ];
