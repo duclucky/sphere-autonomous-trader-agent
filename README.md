@@ -69,7 +69,7 @@ Backend seeded wallet flow:
 The `Run Backend Agent` button calls the Render backend route `POST /api/server-demo/start`. This mode does not connect a reviewer wallet. It uses the server-side `SPHERE_WALLET_SEED` already configured on Render and writes directly to the telemetry tables.
 
 Backend seeded mode is disabled unless `ENABLE_SERVER_DEMO=true` is set on the backend. The route is capped by `MAX_EXECUTIONS_PER_SERVER_DEMO` with a hard maximum of 20, and `SERVER_DEMO_MAX_RUNS` defaults to 1 per backend process to prevent repeated public triggering.
-Each action builds a configured wallet swap plan, sends the input token to the wallet swap stub recipient, then mints the output token into the same backend wallet. Before the send step, the backend inspects wallet inventory and picks a spendable coin object for the configured input symbol, so it can move on to the next funded coin object when one runs out.
+Each action builds a configured wallet swap plan, sends the input token to the wallet swap stub recipient, then mints the output token into the same backend wallet. `SERVER_DEMO_SWAP_PAIRS` can configure several pairs; the agent rotates through them round-robin across the run. Before each send step, the backend inspects wallet inventory and picks a spendable coin object for the configured input symbol, so it can move on to the next funded coin object when one runs out.
 
 ### Safety Limits
 
@@ -140,9 +140,9 @@ Set Render environment variables:
 - `SERVER_DEMO_AMOUNT=1`
 - `SERVER_DEMO_DAILY_CAP=20`
 - `SERVER_DEMO_SWAP_RECIPIENT=sphere-swap`
-- `SERVER_DEMO_FROM_TOKEN=BTC`
-- `SERVER_DEMO_TO_TOKEN=UCT`
-- `SERVER_DEMO_SWAP_RATE=1`
+- `SERVER_DEMO_SWAP_PAIRS=BTC:UCT:1,ETH:UCT:1,SOL:UCT:1`
+
+`SERVER_DEMO_SWAP_PAIRS` uses `FROM:TO:RATE` entries separated by commas. If this variable is not set, the backend falls back to `SERVER_DEMO_FROM_TOKEN`, `SERVER_DEMO_TO_TOKEN`, and `SERVER_DEMO_SWAP_RATE`.
 
 After Render deploys, open `https://your-render-service.onrender.com/api/status`. Then set the same service URL in Vercel as `VITE_API_BASE_URL`.
 

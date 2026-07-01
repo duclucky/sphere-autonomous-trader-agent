@@ -25,6 +25,7 @@ export interface StatusResponse {
       fromToken: string;
       toToken: string;
       rate: number;
+      swapPairs: Array<{ fromToken: string; toToken: string; rate: number }>;
     };
   };
 }
@@ -104,7 +105,12 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
         token: "BTC",
         fromToken: "BTC",
         toToken: "UCT",
-        rate: 1
+        rate: 1,
+        swapPairs: [
+          { fromToken: "BTC", toToken: "UCT", rate: 1 },
+          { fromToken: "ETH", toToken: "UCT", rate: 1 },
+          { fromToken: "SOL", toToken: "UCT", rate: 1 }
+        ]
       }
     }
   };

@@ -63,9 +63,7 @@ describe("server seeded demo route", () => {
     process.env.SERVER_DEMO_AMOUNT = "1";
     process.env.SERVER_DEMO_DAILY_CAP = "20";
     process.env.SERVER_DEMO_SWAP_RECIPIENT = "sphere-swap";
-    process.env.SERVER_DEMO_FROM_TOKEN = "BTC";
-    process.env.SERVER_DEMO_TO_TOKEN = testTokenSymbol;
-    process.env.SERVER_DEMO_SWAP_RATE = "2";
+    process.env.SERVER_DEMO_SWAP_PAIRS = `BTC:${testTokenSymbol}:1,ETH:${testTokenSymbol}:2`;
 
     const app = express();
     app.use("/api", createRoutes({
@@ -81,7 +79,7 @@ describe("server seeded demo route", () => {
 
     try {
       const response = await fetch(url);
-      const body = await response.json() as { config: { serverDemo: { token: string; fromToken: string; toToken: string; amount: number; counterparty: string; rate: number } } };
+      const body = await response.json() as { config: { serverDemo: { token: string; fromToken: string; toToken: string; amount: number; counterparty: string; rate: number; swapPairs: Array<{ fromToken: string; toToken: string; rate: number }> } } };
 
       expect(response.status).toBe(200);
       expect(body.config.serverDemo.token).toBe("BTC");
@@ -89,7 +87,11 @@ describe("server seeded demo route", () => {
       expect(body.config.serverDemo.toToken).toBe(testTokenSymbol);
       expect(body.config.serverDemo.amount).toBe(1);
       expect(body.config.serverDemo.counterparty).toBe("sphere-swap");
-      expect(body.config.serverDemo.rate).toBe(2);
+      expect(body.config.serverDemo.rate).toBe(1);
+      expect(body.config.serverDemo.swapPairs).toEqual([
+        { fromToken: "BTC", toToken: testTokenSymbol, rate: 1 },
+        { fromToken: "ETH", toToken: testTokenSymbol, rate: 2 }
+      ]);
     } finally {
       await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
     }

@@ -10,7 +10,7 @@ Autonomous Agents.
 
 ## Why It Is Agentic
 
-The operator sets budgets, allowed tokens, swap pair, run caps, and risk thresholds. The agent decides when the configured wallet swap action is allowed, builds the swap plan, executes from the Render server wallet seed, and records the reasoning, SDK calls, and proof IDs.
+The operator sets budgets, allowed tokens, swap pairs, run caps, and risk thresholds. The agent decides when each configured wallet swap action is allowed, rotates through the pair list, builds the swap plan, executes from the Render server wallet seed, and records the reasoning, SDK calls, and proof IDs.
 
 ## Sphere SDK Primitives Used
 
@@ -24,7 +24,7 @@ Verified in `@unicitylabs/sphere-sdk` v0.11.0:
 
 ## What Moves Value on Testnet v2
 
-Real backend mode follows the same practical wallet swap flow used by the Sphere wallet UI: send the input asset to the `sphere-swap` stub recipient, then mint the configured output asset into the backend wallet. Dry-run and Vercel fallback data never move value.
+Real backend mode follows the same practical wallet swap flow used by the Sphere wallet UI: send the input asset to the `sphere-swap` stub recipient, then mint the configured output asset into the backend wallet. Multiple pairs can be configured with `SERVER_DEMO_SWAP_PAIRS=BTC:UCT:1,ETH:UCT:1,SOL:UCT:1` and are executed round-robin. Dry-run and Vercel fallback data never move value.
 
 ## AstridOS
 

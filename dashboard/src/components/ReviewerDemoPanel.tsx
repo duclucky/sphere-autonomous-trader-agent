@@ -13,7 +13,7 @@ interface ReviewerDemoPanelProps {
 const backendDefaults = [
   ["Network", "Testnet v2"],
   ["Wallet", "Render seeded wallet"],
-  ["Swap flow", "BTC -> UCT"],
+  ["Swap rotation", "BTC/ETH/SOL -> UCT"],
   ["Action", "send + mint"],
   ["Amount", "1 base unit input"],
   ["Daily cap", "20 base units"],
@@ -103,7 +103,7 @@ export function ReviewerDemoPanel({ onStartServerDemo }: ReviewerDemoPanelProps)
           </div>
           <h1>Backend Seeded Wallet Swap Agent</h1>
           <p>
-            One-click Testnet v2 run from the Render backend wallet seed. The agent selects the configured pair, sends input to the swap stub, mints output, and records proof.
+            One-click Testnet v2 run from the Render backend wallet seed. The agent rotates across configured pairs, sends input to the swap stub, mints output, and records proof.
           </p>
           <div className="hero-actions">
             <button disabled={running} onClick={startBackendAgent} type="button">

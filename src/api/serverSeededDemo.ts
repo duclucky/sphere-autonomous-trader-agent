@@ -14,6 +14,13 @@ export interface ServerSeededDemoOptions {
   fromToken: string;
   toToken: string;
   rate: number;
+  swapPairs?: ServerDemoSwapPair[];
+}
+
+export interface ServerDemoSwapPair {
+  fromToken: string;
+  toToken: string;
+  rate: number;
 }
 
 export interface ServerSeededDemoInput {
@@ -50,11 +57,31 @@ function normalizedCounterparty(value: string | undefined, config: AgentConfig):
   return config.agentNametag.startsWith("@") ? config.agentNametag : `@${config.agentNametag}`;
 }
 
+function parseSwapPairs(value: string | undefined): ServerDemoSwapPair[] {
+  if (!value?.trim()) return [];
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const [fromToken, toToken, rawRate] = item.split(":").map((part) => part.trim());
+      const rate = Number(rawRate);
+      return {
+        fromToken: fromToken || "",
+        toToken: toToken || "",
+        rate: Number.isFinite(rate) && rate > 0 ? rate : 0
+      };
+    });
+}
+
 export function loadServerSeededDemoOptions(env: NodeJS.ProcessEnv, config: AgentConfig): ServerSeededDemoOptions {
   const executions = Math.min(hardMaxExecutions, Math.trunc(numberFromEnv(env.MAX_EXECUTIONS_PER_SERVER_DEMO, hardMaxExecutions)));
   const amount = numberFromEnv(env.SERVER_DEMO_AMOUNT, 1);
   const fromToken = env.SERVER_DEMO_FROM_TOKEN?.trim() || env.SERVER_DEMO_TOKEN?.trim() || "BTC";
   const toToken = env.SERVER_DEMO_TO_TOKEN?.trim() || "UCT";
+  const fallbackPair = { fromToken, toToken, rate: numberFromEnv(env.SERVER_DEMO_SWAP_RATE, 1) };
+  const swapPairs = parseSwapPairs(env.SERVER_DEMO_SWAP_PAIRS);
+  const primaryPair = swapPairs[0] ?? fallbackPair;
   return {
     enabled: env.ENABLE_SERVER_DEMO === "true",
     executions,
@@ -62,10 +89,11 @@ export function loadServerSeededDemoOptions(env: NodeJS.ProcessEnv, config: Agen
     amount,
     dailyCap: numberFromEnv(env.SERVER_DEMO_DAILY_CAP, executions * amount),
     counterparty: env.SERVER_DEMO_SWAP_RECIPIENT?.trim() || normalizedCounterparty(env.SERVER_DEMO_COUNTERPARTY ?? "sphere-swap", config),
-    token: fromToken,
-    fromToken,
-    toToken,
-    rate: numberFromEnv(env.SERVER_DEMO_SWAP_RATE, 1)
+    token: primaryPair.fromToken,
+    fromToken: primaryPair.fromToken,
+    toToken: primaryPair.toToken,
+    rate: primaryPair.rate,
+    swapPairs: swapPairs.length > 0 ? swapPairs : [fallbackPair]
   };
 }
 
@@ -79,11 +107,16 @@ export function validateServerSeededDemoStart(config: AgentConfig, options: Serv
   if (options.amount * options.executions > options.dailyCap) {
     return { allowed: false, reason: "Server seeded demo daily cap would be exceeded." };
   }
-  if (options.fromToken.trim().toUpperCase() === options.toToken.trim().toUpperCase()) {
-    return { allowed: false, reason: "Server seeded demo requires different swap input and output tokens." };
-  }
-  if (!Number.isFinite(options.rate) || options.rate <= 0) {
-    return { allowed: false, reason: "Server seeded demo swap rate must be positive." };
+  for (const pair of swapPairsForOptions(options)) {
+    if (!pair.fromToken || !pair.toToken) {
+      return { allowed: false, reason: "Server seeded demo swap pairs must use FROM:TO:RATE." };
+    }
+    if (pair.fromToken.trim().toUpperCase() === pair.toToken.trim().toUpperCase()) {
+      return { allowed: false, reason: "Server seeded demo requires different swap input and output tokens." };
+    }
+    if (!Number.isFinite(pair.rate) || pair.rate <= 0) {
+      return { allowed: false, reason: "Server seeded demo swap rate must be positive." };
+    }
   }
   return { allowed: true };
 }
@@ -92,16 +125,26 @@ function now(): string {
   return new Date().toISOString();
 }
 
+function swapPairForIndex(options: ServerSeededDemoOptions, index: number): ServerDemoSwapPair {
+  const pairs = swapPairsForOptions(options);
+  return pairs[(index - 1) % pairs.length];
+}
+
+function swapPairsForOptions(options: ServerSeededDemoOptions): ServerDemoSwapPair[] {
+  return options.swapPairs?.length ? options.swapPairs : [{ fromToken: options.fromToken, toToken: options.toToken, rate: options.rate }];
+}
+
 function makeIntent(input: ServerSeededDemoInput, index: number): MarketIntent {
   const timestamp = now();
+  const pair = swapPairForIndex(input.options, index);
   return {
     id: stableId("server-intent", `${input.runId}:${index}`),
     counterparty: input.options.counterparty,
     side: "sell",
-    token: input.options.fromToken,
+    token: pair.fromToken,
     amount: input.options.amount,
-    price: input.options.rate,
-    fairValue: input.options.rate * (1 + input.config.minProfitThreshold),
+    price: pair.rate,
+    fairValue: pair.rate * (1 + input.config.minProfitThreshold),
     keywords: ["server-seeded", "autonomous", "wallet-swap", "testnet"],
     updatedAt: timestamp,
     riskScore: 0.1
@@ -109,23 +152,25 @@ function makeIntent(input: ServerSeededDemoInput, index: number): MarketIntent {
 }
 
 function makeDecision(input: ServerSeededDemoInput, intent: MarketIntent, index: number): Decision {
+  const pair = swapPairForIndex(input.options, index);
   return {
     id: stableId("server-decision", `${input.runId}:${index}`),
     intentId: intent.id,
     action: "EXECUTE_DIRECTLY",
-    reason: `Wallet swap agent selected ${input.options.fromToken}->${input.options.toToken} execution ${index}/${input.options.executions}: configured rate ${input.options.rate} and deployer limits passed.`,
+    reason: `Wallet swap agent selected ${pair.fromToken}->${pair.toToken} execution ${index}/${input.options.executions}: configured rate ${pair.rate} and deployer limits passed.`,
     expectedProfitPct: input.config.minProfitThreshold,
     createdAt: now()
   };
 }
 
 function makeNegotiation(input: ServerSeededDemoInput, intent: MarketIntent, index: number): NegotiationMessage {
+  const pair = swapPairForIndex(input.options, index);
   return {
     id: stableId("server-negotiation", `${input.runId}:${index}`),
     intentId: intent.id,
     counterparty: intent.counterparty,
     direction: "outbound",
-    body: `Server seeded agent prepared wallet swap ${index}/${input.options.executions}: ${input.options.amount} ${input.options.fromToken} -> ${Math.trunc(input.options.amount * input.options.rate)} ${input.options.toToken}.`,
+    body: `Server seeded agent prepared wallet swap ${index}/${input.options.executions}: ${input.options.amount} ${pair.fromToken} -> ${Math.trunc(input.options.amount * pair.rate)} ${pair.toToken}.`,
     status: "simulated",
     mode: input.config.mode,
     createdAt: now()
@@ -166,6 +211,7 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
   store.saveLog({ id: stableId("log", `${runId}:start`), level: "info", rule: "RUN_GATE", message: `Server seeded wallet demo started: ${options.executions} autonomous executions queued.`, createdAt: now() });
 
   for (let index = 1; index <= options.executions; index += 1) {
+    const pair = swapPairForIndex(options, index);
     const intent = makeIntent(input, index);
     const decision = makeDecision(input, intent, index);
     const negotiation = makeNegotiation(input, intent, index);
@@ -180,11 +226,11 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
         decision,
         idempotencyKey,
         walletSwap: {
-          fromToken: options.fromToken,
-          toToken: options.toToken,
+          fromToken: pair.fromToken,
+          toToken: pair.toToken,
           fromAmount: options.amount,
-          toAmount: String(Math.max(1, Math.trunc(options.amount * options.rate))),
-          rate: options.rate,
+          toAmount: String(Math.max(1, Math.trunc(options.amount * pair.rate))),
+          rate: pair.rate,
           recipient: options.counterparty
         }
       });
@@ -196,7 +242,7 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
         mode: config.mode,
         txId: result.txId,
         status: result.status,
-        token: `${options.fromToken}->${options.toToken}`,
+        token: `${pair.fromToken}->${pair.toToken}`,
         amount: intent.amount,
         counterparty: intent.counterparty,
         createdAt: now(),

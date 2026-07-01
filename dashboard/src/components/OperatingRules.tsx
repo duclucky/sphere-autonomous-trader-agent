@@ -12,15 +12,19 @@ export function OperatingRules({ status }: OperatingRulesProps) {
   const sourceWallet = status.wallet?.nametag ?? "Render seeded wallet";
   const walletAddress = status.wallet?.address ?? "waiting for backend wallet";
   const modeLabel = status.mode === "real" ? "REAL TESTNET" : "DRY-RUN";
-  const swapPair = `${status.config.serverDemo.fromToken}->${status.config.serverDemo.toToken}`;
+  const swapPairs = status.config.serverDemo.swapPairs.length
+    ? status.config.serverDemo.swapPairs
+    : [{ fromToken: status.config.serverDemo.fromToken, toToken: status.config.serverDemo.toToken, rate: status.config.serverDemo.rate }];
+  const swapRotation = swapPairs.map((pair) => `${pair.fromToken}->${pair.toToken}`).join(", ");
+  const quoteRules = swapPairs.map((pair) => `${pair.rate} ${pair.toToken}/${pair.fromToken}`).join(", ");
   const rules = [
     { label: "Run gate", value: status.running ? "RUNNING" : "IDLE", detail: "The backend starts only when the operator clicks Run Backend Agent." },
     { label: "Network", value: status.config.network, detail: "Only Testnet v2 is allowed." },
     { label: "Mode", value: modeLabel, detail: "Real mode performs the same send + mint flow used by the Sphere wallet swap screen." },
     { label: "Source wallet", value: sourceWallet, detail: walletAddress },
-    { label: "Swap pair", value: swapPair, detail: `Allowed scan tokens: ${status.config.allowedTokens.join(", ")}. Backend swap input is ${status.config.serverDemo.fromToken}.` },
+    { label: "Swap rotation", value: swapRotation, detail: `Round-robin across ${swapPairs.length} configured pair(s). Allowed scan tokens: ${status.config.allowedTokens.join(", ")}.` },
     { label: "Swap recipient", value: status.config.serverDemo.counterparty, detail: "The input token is sent to the same swap stub used by the wallet UI." },
-    { label: "Quote rule", value: `${status.config.serverDemo.rate} ${status.config.serverDemo.toToken} per ${status.config.serverDemo.fromToken}`, detail: `Minimum configured edge is ${(status.config.minProfitThreshold * 100).toFixed(2)}%.` },
+    { label: "Quote rules", value: quoteRules, detail: `Minimum configured edge is ${(status.config.minProfitThreshold * 100).toFixed(2)}%.` },
     { label: "Execution size", value: `${status.config.serverDemo.amount} base unit each`, detail: `${status.config.serverDemo.executions} max swaps; demo cap is ${formatCap(status.config.serverDemo.dailyCap)}.` }
   ];
 

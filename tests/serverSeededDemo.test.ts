@@ -66,6 +66,21 @@ describe("server seeded wallet demo", () => {
     expect(options.counterparty).toBe("sphere-swap");
   });
 
+  it("parses multiple backend wallet swap pairs from env", () => {
+    const options = loadServerSeededDemoOptions({
+      SERVER_DEMO_SWAP_PAIRS: "BTC:UCT:1, ETH:UCT:2, SOL:UCT:3"
+    }, config);
+
+    expect(options.swapPairs).toEqual([
+      { fromToken: "BTC", toToken: "UCT", rate: 1 },
+      { fromToken: "ETH", toToken: "UCT", rate: 2 },
+      { fromToken: "SOL", toToken: "UCT", rate: 3 }
+    ]);
+    expect(options.fromToken).toBe("BTC");
+    expect(options.toToken).toBe("UCT");
+    expect(options.rate).toBe(1);
+  });
+
   it("records twenty autonomous executions into legacy telemetry", async () => {
     const store = new LocalStore(":memory:");
     const adapter = createAdapter();
@@ -169,6 +184,40 @@ describe("server seeded wallet demo", () => {
       rate: 2,
       recipient: "sphere-swap"
     });
+  });
+
+  it("round-robins multiple swap pairs across a server demo run", async () => {
+    const store = new LocalStore(":memory:");
+    const adapter = createAdapter();
+
+    const result = await runServerSeededDemo({
+      config,
+      store,
+      adapter,
+      options: {
+        enabled: true,
+        executions: 5,
+        maxRuns: 1,
+        amount: 1,
+        dailyCap: 5,
+        counterparty: "sphere-swap",
+        token: "BTC",
+        fromToken: "BTC",
+        toToken: testTokenSymbol,
+        rate: 1,
+        swapPairs: [
+          { fromToken: "BTC", toToken: testTokenSymbol, rate: 1 },
+          { fromToken: "ETH", toToken: testTokenSymbol, rate: 2 },
+          { fromToken: "SOL", toToken: testTokenSymbol, rate: 3 }
+        ]
+      },
+      runId: "server-run-round-robin"
+    });
+
+    expect(result.status).toBe("complete");
+    expect(adapter.requests.map((request) => request.walletSwap?.fromToken)).toEqual(["BTC", "ETH", "SOL", "BTC", "ETH"]);
+    expect(adapter.requests.map((request) => request.walletSwap?.toAmount)).toEqual(["1", "2", "3", "1", "2"]);
+    expect(store.getState().executions.map((execution) => execution.token)).toEqual(["BTC->UCT", "ETH->UCT", "SOL->UCT", "BTC->UCT", "ETH->UCT"]);
   });
 
   it("stops and records a failed execution when the backend wallet errors", async () => {

@@ -34,7 +34,8 @@ export function createRoutes(runtime: AgentRuntime): Router {
           token: serverDemo.token,
           fromToken: serverDemo.fromToken,
           toToken: serverDemo.toToken,
-          rate: serverDemo.rate
+          rate: serverDemo.rate,
+          swapPairs: serverDemo.swapPairs
         }
       }
     });
