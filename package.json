@@ -1,0 +1,38 @@
+{
+  "name": "sphere-autonomous-trader-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && vite build --config vite.config.ts",
+    "test": "vitest run --config vitest.config.ts",
+    "demo:dry": "tsx src/runDemo.ts",
+    "agent:dry": "tsx src/runAgentDry.ts",
+    "agent:real": "tsx src/runAgentReal.ts",
+    "api:dev": "tsx watch src/api/server.ts",
+    "dashboard:dev": "vite --config vite.config.ts --host 127.0.0.1",
+    "dev": "concurrently \"npm:api:dev\" \"npm:dashboard:dev\""
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "@unicitylabs/sphere-sdk": "^0.11.0",
+    "concurrently": "^9.1.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsx": "^4.19.2",
+    "vite": "^6.0.7",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

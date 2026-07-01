@@ -1,0 +1,6 @@
+[
+  { "nametag": "@counterparty-alpha", "reputation": 0.82, "response": "accept" },
+  { "nametag": "@counterparty-beta", "reputation": 0.94, "response": "accept" },
+  { "nametag": "@counterparty-whale", "reputation": 0.72, "response": "reject" },
+  { "nametag": "@counterparty-gamma", "reputation": 0.76, "response": "counter" }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "fixture-profitable-negotiate",
+    "counterparty": "@counterparty-alpha",
+    "side": "sell",
+    "token": "UNICITY",
+    "amount": 40,
+    "price": 0.96,
+    "fairValue": 1,
+    "keywords": ["arbitrage", "unicity", "swap"],
+    "updatedAt": "2026-07-01T00:00:00.000Z",
+    "riskScore": 0.18
+  },
+  {
+    "id": "fixture-profitable-direct",
+    "counterparty": "@counterparty-beta",
+    "side": "sell",
+    "token": "UNICITY",
+    "amount": 25,
+    "price": 0.9,
+    "fairValue": 1,
+    "keywords": ["fast", "swap"],
+    "updatedAt": "2026-07-01T00:01:00.000Z",
+    "riskScore": 0.08
+  },
+  {
+    "id": "fixture-too-large",
+    "counterparty": "@counterparty-whale",
+    "side": "sell",
+    "token": "UNICITY",
+    "amount": 500,
+    "price": 0.8,
+    "fairValue": 1,
+    "keywords": ["bulk"],
+    "updatedAt": "2026-07-01T00:02:00.000Z",
+    "riskScore": 0.2
+  },
+  {
+    "id": "fixture-low-spread",
+    "counterparty": "@counterparty-gamma",
+    "side": "sell",
+    "token": "USDC",
+    "amount": 20,
+    "price": 0.995,
+    "fairValue": 1,
+    "keywords": ["stable"],
+    "updatedAt": "2026-07-01T00:03:00.000Z",
+    "riskScore": 0.1
+  }
+]
