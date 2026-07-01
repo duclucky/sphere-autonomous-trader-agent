@@ -22,6 +22,8 @@ const config: AgentConfig = {
   spendingCapPerDay: 20
 };
 
+const testCoinId = "1111111111111111111111111111111111111111111111111111111111111111";
+
 function createAdapter(failAt?: number): SphereAdapter & { requests: ExecuteValueTransferRequest[] } {
   const requests: ExecuteValueTransferRequest[] = [];
   return {
@@ -69,7 +71,7 @@ describe("server seeded wallet demo", () => {
         amount: 1,
         dailyCap: 20,
         counterparty: "@autointent-trader",
-        token: "UNICITY"
+        token: testCoinId
       },
       runId: "server-run"
     });
@@ -101,6 +103,21 @@ describe("server seeded wallet demo", () => {
     expect(decision.reason).toContain("daily cap");
   });
 
+  it("rejects named tokens in real server demo because payments.send needs a 64-hex coin id", () => {
+    const decision = validateServerSeededDemoStart(config, {
+      enabled: true,
+      executions: 20,
+      maxRuns: 1,
+      amount: 1,
+      dailyCap: 20,
+      counterparty: "@autointent-trader",
+      token: "UNICITY"
+    });
+
+    expect(decision.allowed).toBe(false);
+    expect(decision.reason).toContain("64-hex coin id");
+  });
+
   it("stops and records a failed execution when the backend wallet errors", async () => {
     const store = new LocalStore(":memory:");
     const adapter = createAdapter(3);
@@ -116,7 +133,7 @@ describe("server seeded wallet demo", () => {
         amount: 1,
         dailyCap: 20,
         counterparty: "@autointent-trader",
-        token: "UNICITY"
+        token: testCoinId
       },
       runId: "server-run-fail"
     });

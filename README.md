@@ -162,7 +162,7 @@ Set Render environment variables:
 - `SERVER_DEMO_AMOUNT=1`
 - `SERVER_DEMO_DAILY_CAP=20`
 - `SERVER_DEMO_COUNTERPARTY=@autointent-trader`
-- `SERVER_DEMO_TOKEN=UNICITY`
+- `SERVER_DEMO_TOKEN=<64-hex testnet coin id from the funded Render wallet>`
 
 After Render deploys, open `https://your-render-service.onrender.com/api/status`. Then set the same service URL in Vercel as `VITE_API_BASE_URL`.
 
