@@ -110,10 +110,41 @@ The dashboard folder has its own `package.json`, `index.html`, and Vite config. 
 Set public reviewer variables in Vercel as needed:
 
 - `VITE_PUBLIC_APP_MODE=reviewer-demo`
+- `VITE_API_BASE_URL=https://your-render-service.onrender.com`
 - `VITE_SPHERE_NETWORK=testnet-v2`
 - `VITE_SPHERE_WALLET_URL=https://sphere.unicity.network`
 - `VITE_SPHERE_TESTNET_COIN_ID=1111111111111111111111111111111111111111111111111111111111111111`
 - `VITE_SPHERE_DEMO_COUNTERPARTY=@autointent-trader` or a `DIRECT://...` address
+
+## Render backend deployment
+
+Deploy the Express agent API as a Render Web Service so Vercel can call a public backend.
+
+Use these Render settings:
+
+- Root Directory: leave blank
+- Build Command: `npm install && npm run build`
+- Start Command: `npm run api:start`
+- Instance Type: Free or paid
+
+Set Render environment variables:
+
+- `NODE_VERSION=22`
+- `HOST=0.0.0.0`
+- `SPHERE_NETWORK=testnet-v2`
+- `SPHERE_MODE=real`
+- `SPHERE_WALLET_SEED=<server-side testnet wallet seed>`
+- `SPHERE_AGENT_NAMETAG=autointent-trader`
+- `SPHERE_WALLET_API_BASE_URL=https://wallet-api.unicity.network`
+- `SPHERE_ORACLE_API_KEY=<if required by the SDK>`
+- `SPHERE_DEVICE_ID=sphere-autonomous-trader-agent-render`
+- `MAX_TRADE_AMOUNT=1`
+- `MIN_PROFIT_THRESHOLD=0.03`
+- `SCAN_INTERVAL_SECONDS=10`
+- `SPENDING_CAP_PER_RUN=1`
+- `SPENDING_CAP_PER_DAY=5`
+
+After Render deploys, open `https://your-render-service.onrender.com/api/status`. Then set the same service URL in Vercel as `VITE_API_BASE_URL`.
 
 ## Real Testnet Notes
 

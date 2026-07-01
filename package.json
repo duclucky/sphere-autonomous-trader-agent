@@ -10,6 +10,7 @@
     "agent:dry": "tsx src/runAgentDry.ts",
     "agent:real": "tsx src/runAgentReal.ts",
     "api:dev": "tsx watch src/api/server.ts",
+    "api:start": "tsx src/api/server.ts",
     "dashboard:dev": "vite --config vite.config.ts --host 127.0.0.1",
     "dev": "concurrently \"npm:api:dev\" \"npm:dashboard:dev\""
   },

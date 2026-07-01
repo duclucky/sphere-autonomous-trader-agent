@@ -1,4 +1,5 @@
 import type { AgentState, Decision, ExecutionRecord, LogEntry, MarketIntent, NegotiationMessage, WalletIdentity } from "./types";
+import { withApiBaseUrl } from "./apiBase";
 
 export interface StatusResponse {
   running: boolean;
@@ -17,7 +18,8 @@ export interface StatusResponse {
 }
 
 async function getJson<T>(path: string): Promise<T> {
-  const res = await fetch(path);
+  const url = withApiBaseUrl(path);
+  const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`GET ${path} failed: ${res.status}`);
   }
@@ -25,7 +27,8 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 async function postJson<T>(path: string): Promise<T> {
-  const res = await fetch(path, { method: "POST" });
+  const url = withApiBaseUrl(path);
+  const res = await fetch(url, { method: "POST" });
   if (!res.ok) {
     throw new Error(`POST ${path} failed: ${res.status}`);
   }
