@@ -164,6 +164,8 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
       counterparty: "sphere-swap",
       createdAt: now,
       note: "Static wallet swap preview. Real backend sends input token then mints output token.",
+      quotedRate: 1,
+      executedRate: 1.125,
       realizedProfitPct: 0.125
     }
   ];

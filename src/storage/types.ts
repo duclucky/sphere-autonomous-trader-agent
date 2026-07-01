@@ -81,6 +81,8 @@ export interface ExecutionRecord {
   counterparty: string;
   createdAt: string;
   note: string;
+  quotedRate?: number;
+  executedRate?: number;
   realizedProfitPct?: number;
 }
 
@@ -123,6 +125,8 @@ export interface ExecuteValueTransferResult {
   txId: string;
   status: ExecutionRecord["status"];
   note: string;
+  quotedRate?: number;
+  executedRate?: number;
   realizedProfitPct?: number;
 }
 

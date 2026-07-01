@@ -44,7 +44,7 @@ function createAdapter(failAt?: number): SphereAdapter & { requests: ExecuteValu
       if (failAt && requests.length === failAt) {
         throw new Error(`execution ${failAt} failed`);
       }
-      return { txId: `tx-${requests.length}`, status: "submitted", note: "fake submitted", realizedProfitPct: 0.125 };
+      return { txId: `tx-${requests.length}`, status: "submitted", note: "fake submitted", quotedRate: 2, executedRate: 2.25, realizedProfitPct: 0.125 };
     }
   };
 }
@@ -113,6 +113,8 @@ describe("server seeded wallet demo", () => {
     expect(state.negotiations).toHaveLength(20);
     expect(state.executions).toHaveLength(20);
     expect(state.executions[0].mode).toBe("real");
+    expect(state.executions[0].quotedRate).toBe(2);
+    expect(state.executions[0].executedRate).toBe(2.25);
     expect(state.executions[0].realizedProfitPct).toBe(0.125);
     expect(state.logs.some((log) => log.message.includes("completed 20/20"))).toBe(true);
   });

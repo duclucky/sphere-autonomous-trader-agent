@@ -55,6 +55,8 @@ export interface ExecutionRecord {
   counterparty: string;
   createdAt: string;
   note: string;
+  quotedRate?: number;
+  executedRate?: number;
   realizedProfitPct?: number;
 }
 

@@ -247,6 +247,8 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
         counterparty: intent.counterparty,
         createdAt: now(),
         note: result.note,
+        quotedRate: result.quotedRate,
+        executedRate: result.executedRate,
         realizedProfitPct: result.realizedProfitPct
       };
       store.saveExecution(execution);

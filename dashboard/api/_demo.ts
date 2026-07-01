@@ -137,6 +137,8 @@ export function executionsPayload() {
       counterparty: "sphere-swap",
       createdAt: now(),
       note: "Vercel mock wallet swap preview. Render backend performs send + mintFungibleToken.",
+      quotedRate: 1,
+      executedRate: 1.125,
       realizedProfitPct: 0.125
     }
   ];

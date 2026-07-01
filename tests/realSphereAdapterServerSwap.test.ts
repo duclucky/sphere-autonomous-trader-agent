@@ -123,6 +123,8 @@ describe("RealSphereAdapter wallet swap execution", () => {
       txId: "send-tx+minted-uct",
       status: "confirmed",
       note: "Wallet swap executed: sent 1 BTC to sphere-swap, minted 2 UCT at configured rate 2.",
+      quotedRate: 2,
+      executedRate: 2,
       realizedProfitPct: 0
     });
   });

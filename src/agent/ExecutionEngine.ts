@@ -43,6 +43,8 @@ export class ExecutionEngine {
       counterparty: intent.counterparty,
       createdAt: new Date().toISOString(),
       note: result.note,
+      quotedRate: result.quotedRate,
+      executedRate: result.executedRate,
       realizedProfitPct: result.realizedProfitPct
     };
     this.risk.recordExecution(intent.id, intent.amount);
