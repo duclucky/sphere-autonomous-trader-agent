@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
-    "build": "vite build"
+    "dev": "vite --config ./vite.config.mjs --configLoader native --host 127.0.0.1",
+    "build": "vite build --config ./vite.config.mjs --configLoader native"
   },
   "dependencies": {
     "@unicitylabs/sphere-sdk": "^0.11.0",

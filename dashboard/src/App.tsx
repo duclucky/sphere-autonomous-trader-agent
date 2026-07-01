@@ -50,11 +50,10 @@ export default function App() {
       <header className="topbar">
         <div>
           <h1>Sphere Autonomous Trader Agent</h1>
-          <p>Reviewer wallet connect and autonomous Testnet v2 demo</p>
+          <p>Backend seeded wallet agent for autonomous Testnet v2 execution</p>
         </div>
         <div className="topbar-actions">
-          <button onClick={() => document.getElementById("reviewer-connect")?.click()} type="button">Connect Wallet</button>
-          <div className={`mode ${data.status.mode === "real" ? "real" : "dry"}`}>{data.status.mode === "real" ? "real testnet" : "mock dry-run"}</div>
+          <div className={`mode ${data.status.mode === "real" ? "real" : "dry"}`}>{data.status.mode === "real" ? "real testnet" : "backend preview"}</div>
         </div>
       </header>
 
@@ -66,8 +65,8 @@ export default function App() {
         return result;
       }} />
 
-      <details className="legacy-telemetry">
-        <summary>Legacy agent telemetry</summary>
+      <details className="legacy-telemetry" open>
+        <summary>Agent Telemetry</summary>
         <p className="muted">These tables show backend agent telemetry. Use Run Backend Agent above to populate them from the Render seeded wallet.</p>
         <section className="grid two">
           <IntentTable intents={data.intents} />
