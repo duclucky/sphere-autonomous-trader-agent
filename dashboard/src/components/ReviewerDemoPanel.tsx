@@ -8,6 +8,12 @@ import { AgentFlow } from "./AgentFlow";
 
 const defaultCoinId = import.meta.env.VITE_SPHERE_TESTNET_COIN_ID ?? "";
 const defaultCounterparty = import.meta.env.VITE_SPHERE_DEMO_COUNTERPARTY ?? "@autointent-trader";
+const safeDefaultLimits: ReviewerLimits = {
+  maxTradeAmount: 0.01,
+  maxExecutions: 1,
+  dailyCap: 1,
+  allowedToken: defaultCoinId
+};
 
 const initialSteps: ReviewerStep[] = [
   "Connect Wallet",
@@ -42,14 +48,10 @@ export function ReviewerDemoPanel({ adapter }: { adapter?: SphereWalletAdapter }
   const executionLedger = useRef(new Set<string>());
   const [wallet, setWallet] = useState<WalletConnectionState>(disconnectedWalletState());
   const [mode, setMode] = useState<ReviewerDemoMode>("dry-run");
-  const [limits, setLimits] = useState<ReviewerLimits>({
-    maxTradeAmount: 1,
-    maxExecutions: 1,
-    dailyCap: 5,
-    allowedToken: defaultCoinId
-  });
+  const [limits, setLimits] = useState<ReviewerLimits>(safeDefaultLimits);
   const [amount, setAmount] = useState(0.01);
   const [counterparty, setCounterparty] = useState(defaultCounterparty);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [steps, setSteps] = useState<ReviewerStep[]>(initialSteps);
   const [result, setResult] = useState<ReviewerRunResult | null>(null);
   const [running, setRunning] = useState(false);
@@ -104,7 +106,15 @@ export function ReviewerDemoPanel({ adapter }: { adapter?: SphereWalletAdapter }
     setStatusText("AGENTIC MODE");
   };
 
-  const realReady = wallet.connected && wallet.networkId === 4 && Boolean(limits.allowedToken);
+  const useSafeDefaults = () => {
+    setLimits(safeDefaultLimits);
+    setAmount(0.01);
+    setCounterparty(defaultCounterparty);
+    setStatusText("SAFE DEFAULTS LOADED");
+  };
+
+  const hasRealConfig = Boolean(limits.allowedToken && counterparty);
+  const realReady = wallet.connected && wallet.networkId === 4 && hasRealConfig;
 
   return (
     <section className="reviewer-panel">
@@ -144,40 +154,54 @@ export function ReviewerDemoPanel({ adapter }: { adapter?: SphereWalletAdapter }
 
         <div className="panel-block controls-block">
           <h2>Reviewer Demo</h2>
+          <p className="muted">Dry-run works immediately. Real testnet only needs wallet connect plus deployer-provided safe defaults.</p>
           <div className="segmented">
             <button className={mode === "dry-run" ? "selected" : ""} onClick={() => setMode("dry-run")} type="button">Dry-run demo</button>
             <button className={mode === "real-testnet" ? "selected" : ""} onClick={() => setMode("real-testnet")} type="button">Real testnet demo</button>
           </div>
-          <label>
-            Max trade amount
-            <input min="0.000001" step="0.01" type="number" value={limits.maxTradeAmount} onChange={(event) => setLimits({ ...limits, maxTradeAmount: Number(event.target.value) })} />
-          </label>
-          <label>
-            Max executions
-            <input min="1" max="1" step="1" type="number" value={limits.maxExecutions} onChange={(event) => setLimits({ ...limits, maxExecutions: Number(event.target.value) })} />
-          </label>
-          <label>
-            Daily cap
-            <input min="0.000001" step="0.01" type="number" value={limits.dailyCap} onChange={(event) => setLimits({ ...limits, dailyCap: Number(event.target.value) })} />
-          </label>
-          <label>
-            Amount
-            <input min="0.000001" step="0.01" type="number" value={amount} onChange={(event) => setAmount(Number(event.target.value))} />
-          </label>
-          <label>
-            Allowed token / testnet coin id
-            <input value={limits.allowedToken} onChange={(event) => setLimits({ ...limits, allowedToken: event.target.value.trim() })} placeholder="64-hex testnet coin id" />
-          </label>
-          <label>
-            Destination / counterparty
-            <input value={counterparty} onChange={(event) => setCounterparty(event.target.value.trim())} placeholder="@nametag or DIRECT://..." />
-          </label>
+          <div className="config-summary">
+            <div><strong>{amount}</strong><span>max demo amount</span></div>
+            <div><strong>{limits.maxExecutions}</strong><span>execution per run</span></div>
+            <div><strong>{limits.dailyCap}</strong><span>daily cap</span></div>
+          </div>
           <div className="button-row">
+            <button className="secondary" onClick={useSafeDefaults} type="button">Use safe demo defaults</button>
             <button disabled={running || (mode === "real-testnet" && !realReady)} onClick={startDemo} type="button">Start Reviewer Demo</button>
             <button className="secondary" onClick={stopDemo} type="button">Stop Agent</button>
             <button className="ghost" onClick={resetDemo} type="button">Reset Demo State</button>
           </div>
-          {mode === "real-testnet" && !realReady ? <small>Real testnet requires a connected Testnet v2 wallet and a configured coin id.</small> : null}
+          {mode === "real-testnet" && !realReady ? <small>Real testnet needs a connected Testnet v2 wallet and deployer demo token settings. You can run dry-run now.</small> : null}
+          <button className="ghost advanced-toggle" onClick={() => setShowAdvanced((value) => !value)} type="button">
+            {showAdvanced ? "Hide advanced settings" : "Advanced settings"}
+          </button>
+          {showAdvanced ? (
+            <div className="advanced-settings">
+              <label>
+                Max trade amount
+                <input min="0.000001" step="0.01" type="number" value={limits.maxTradeAmount} onChange={(event) => setLimits({ ...limits, maxTradeAmount: Number(event.target.value) })} />
+              </label>
+              <label>
+                Max executions
+                <input min="1" max="1" step="1" type="number" value={limits.maxExecutions} onChange={(event) => setLimits({ ...limits, maxExecutions: Number(event.target.value) })} />
+              </label>
+              <label>
+                Daily cap
+                <input min="0.000001" step="0.01" type="number" value={limits.dailyCap} onChange={(event) => setLimits({ ...limits, dailyCap: Number(event.target.value) })} />
+              </label>
+              <label>
+                Amount
+                <input min="0.000001" step="0.01" type="number" value={amount} onChange={(event) => setAmount(Number(event.target.value))} />
+              </label>
+              <label>
+                Allowed token / testnet coin id
+                <input value={limits.allowedToken} onChange={(event) => setLimits({ ...limits, allowedToken: event.target.value.trim() })} placeholder="64-hex testnet coin id" />
+              </label>
+              <label>
+                Destination / counterparty
+                <input value={counterparty} onChange={(event) => setCounterparty(event.target.value.trim())} placeholder="@nametag or DIRECT://..." />
+              </label>
+            </div>
+          ) : null}
         </div>
       </div>
 

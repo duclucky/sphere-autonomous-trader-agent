@@ -359,6 +359,44 @@ pre {
   gap: 12px;
 }
 
+.config-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.config-summary div {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: #08101a;
+  padding: 12px;
+}
+
+.config-summary strong {
+  display: block;
+  color: #ffad61;
+  font-size: 20px;
+}
+
+.config-summary span {
+  color: #98a4b5;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.advanced-toggle {
+  justify-self: start;
+}
+
+.advanced-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+}
+
 .segmented {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -490,7 +528,7 @@ dd {
     font-size: 34px;
   }
 
-  .kv, .proof-grid {
+  .kv, .proof-grid, .config-summary, .advanced-settings {
     grid-template-columns: 1fr;
   }
 
