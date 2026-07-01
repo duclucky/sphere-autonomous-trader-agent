@@ -171,6 +171,22 @@ small {
   overflow: auto;
 }
 
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.section-heading.compact {
+  margin-bottom: 10px;
+}
+
+.section-heading p {
+  max-width: 860px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -228,13 +244,38 @@ pre {
   max-height: 360px;
 }
 
-.logs > div {
+.log-head, .logs > .log-entry {
   display: grid;
-  grid-template-columns: 190px 60px 1fr;
+  grid-template-columns: 190px 60px 110px 1fr;
   gap: 10px;
   padding: 7px 10px;
+}
+
+.log-head {
+  position: sticky;
+  top: 0;
+  background: #0c121c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #98a4b5;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  z-index: 1;
+}
+
+.logs > .log-entry {
   border-bottom: 1px solid #edf1ef;
   font-size: 12px;
+}
+
+.logs > div p {
+  margin: 0;
+}
+
+.log-rule {
+  color: #ffcf6d;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .logs .warn strong {
@@ -386,6 +427,63 @@ pre {
 
 .backend-defaults {
   align-content: start;
+}
+
+.operating-rules {
+  display: grid;
+  gap: 16px;
+}
+
+.rule-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rule-card {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: #08101a;
+  padding: 12px;
+}
+
+.rule-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #7f8b9d;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.rule-card strong {
+  display: block;
+  color: #f5f7fb;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.rule-card p {
+  margin-top: 6px;
+  color: #98a4b5;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.rule-trace {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  color: #98a4b5;
+  font-size: 13px;
+}
+
+.rule-trace strong {
+  color: #f5f7fb;
+  min-width: 110px;
 }
 
 .controls-block {
@@ -566,7 +664,19 @@ dd {
     grid-template-columns: 1fr;
   }
 
-  .logs > div {
+  .log-head {
+    display: none;
+  }
+
+  .logs > .log-entry {
     grid-template-columns: 1fr;
+  }
+
+  .rule-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rule-trace {
+    flex-direction: column;
   }
 }

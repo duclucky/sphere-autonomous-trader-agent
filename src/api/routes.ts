@@ -22,7 +22,8 @@ export function createRoutes(runtime: AgentRuntime): Router {
         scanIntervalSeconds: runtime.config.scanIntervalSeconds,
         allowedTokens: runtime.config.allowedTokens,
         spendingCapPerRun: runtime.config.spendingCapPerRun,
-        spendingCapPerDay: runtime.config.spendingCapPerDay
+        spendingCapPerDay: runtime.config.spendingCapPerDay,
+        counterparty: runtime.config.agentNametag.startsWith("@") ? runtime.config.agentNametag : `@${runtime.config.agentNametag}`
       }
     });
   });

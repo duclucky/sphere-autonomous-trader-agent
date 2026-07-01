@@ -5,6 +5,7 @@ import { ExecutionTable } from "./components/ExecutionTable";
 import { IntentTable } from "./components/IntentTable";
 import { LogViewer } from "./components/LogViewer";
 import { NegotiationPanel } from "./components/NegotiationPanel";
+import { OperatingRules } from "./components/OperatingRules";
 import { ReviewerDemoPanel } from "./components/ReviewerDemoPanel";
 import { demoDashboardState, fetchDashboardState, startServerSeededDemo, type StatusResponse } from "./api";
 import { backendOfflineMessage } from "./backendOffline";
@@ -65,9 +66,11 @@ export default function App() {
         return result;
       }} />
 
+      <OperatingRules status={data.status} />
+
       <details className="legacy-telemetry" open>
         <summary>Agent Telemetry</summary>
-        <p className="muted">These tables show backend agent telemetry. Use Run Backend Agent above to populate them from the Render seeded wallet.</p>
+        <p className="muted">These tables show backend agent telemetry. Use Run Backend Agent above to populate them from the Render seeded wallet and compare each row against the rule snapshot.</p>
         <section className="grid two">
           <IntentTable intents={data.intents} />
           <DecisionTable decisions={data.decisions} />

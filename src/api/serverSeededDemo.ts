@@ -142,14 +142,14 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
   if (!startDecision.allowed) {
     const message = startDecision.reason ?? "Server seeded demo is blocked.";
     const status = options.enabled ? "blocked" : "disabled";
-    store.saveLog({ id: stableId("log", `${runId}:blocked`), level: "warn", message, createdAt: now() });
+    store.saveLog({ id: stableId("log", `${runId}:blocked`), level: "warn", rule: "RUN_GATE", message, createdAt: now() });
     return { status, runId, requested: options.enabled ? options.executions : 0, completed: 0, failed: 0, message };
   }
 
   let completed = 0;
   let failed = 0;
   store.setRunning(true);
-  store.saveLog({ id: stableId("log", `${runId}:start`), level: "info", message: `Server seeded wallet demo started: ${options.executions} autonomous executions queued.`, createdAt: now() });
+  store.saveLog({ id: stableId("log", `${runId}:start`), level: "info", rule: "RUN_GATE", message: `Server seeded wallet demo started: ${options.executions} autonomous executions queued.`, createdAt: now() });
 
   for (let index = 1; index <= options.executions; index += 1) {
     const intent = makeIntent(input, index);
@@ -178,18 +178,18 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
       };
       store.saveExecution(execution);
       completed += 1;
-      store.saveLog({ id: stableId("log", `${runId}:${index}:submitted`), level: "info", message: `Server seeded execution ${index}/${options.executions} submitted: ${result.txId}.`, createdAt: now() });
+      store.saveLog({ id: stableId("log", `${runId}:${index}:submitted`), level: "info", rule: "EXECUTION_SUBMITTED", message: `Server seeded execution ${index}/${options.executions} submitted: ${result.txId}.`, createdAt: now() });
     } catch (error) {
       failed += 1;
       store.saveExecution(failedExecution(input, intent, decision, idempotencyKey, error));
       const message = error instanceof Error ? error.message : String(error);
-      store.saveLog({ id: stableId("log", `${runId}:${index}:failed`), level: "error", message: `Server seeded execution ${index}/${options.executions} failed: ${message}`, createdAt: now() });
+      store.saveLog({ id: stableId("log", `${runId}:${index}:failed`), level: "error", rule: "BALANCE_CHECK", message: `Server seeded execution ${index}/${options.executions} failed: ${message}`, createdAt: now() });
       store.setRunning(false);
       return { status: "failed", runId, requested: options.executions, completed, failed, message };
     }
   }
 
   store.setRunning(false);
-  store.saveLog({ id: stableId("log", `${runId}:complete`), level: "info", message: `Server seeded wallet demo completed ${completed}/${options.executions} autonomous executions.`, createdAt: now() });
+  store.saveLog({ id: stableId("log", `${runId}:complete`), level: "info", rule: "RUN_COMPLETE", message: `Server seeded wallet demo completed ${completed}/${options.executions} autonomous executions.`, createdAt: now() });
   return { status: "complete", runId, requested: options.executions, completed, failed, message: `Server seeded wallet demo completed ${completed}/${options.executions}.` };
 }

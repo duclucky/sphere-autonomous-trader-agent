@@ -14,6 +14,7 @@ export interface StatusResponse {
     allowedTokens: string[];
     spendingCapPerRun: number;
     spendingCapPerDay: number;
+    counterparty: string;
   };
 }
 
@@ -81,7 +82,8 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
       scanIntervalSeconds: 10,
       allowedTokens: ["UNICITY", "USDC"],
       spendingCapPerRun: 100,
-      spendingCapPerDay: 250
+      spendingCapPerDay: 250,
+      counterparty: "@counterparty-alpha"
     }
   };
   const intents: MarketIntent[] = [
@@ -140,6 +142,7 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
     {
       id: "demo-log",
       level: "info",
+      rule: "DEMO_TRACE",
       message: "Reviewer demo is running client-side; legacy agent tables show simulated sample data.",
       createdAt: now
     }

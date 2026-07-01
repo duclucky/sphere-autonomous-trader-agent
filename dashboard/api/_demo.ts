@@ -25,7 +25,8 @@ export function statusPayload() {
       scanIntervalSeconds: 10,
       allowedTokens: ["UNICITY", "USDC"],
       spendingCapPerRun: 100,
-      spendingCapPerDay: 250
+      spendingCapPerDay: 250,
+      counterparty: "@counterparty-alpha"
     }
   };
 }
@@ -129,12 +130,14 @@ export function logsPayload() {
     {
       id: "vercel-demo-log-1",
       level: "info",
+      rule: "DEMO_TRACE",
       message: "Vercel mock API active. Dashboard is connected to demo serverless endpoints.",
       createdAt: now()
     },
     {
       id: "vercel-demo-log-2",
       level: "warn",
+      rule: "DEMO_TRACE",
       message: "This deployment does not run the local autonomous backend or move testnet value.",
       createdAt: now()
     }

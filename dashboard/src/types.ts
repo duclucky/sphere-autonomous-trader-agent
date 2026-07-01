@@ -60,6 +60,7 @@ export interface ExecutionRecord {
 export interface LogEntry {
   id: string;
   level: "info" | "warn" | "error";
+  rule?: string;
   message: string;
   createdAt: string;
 }
