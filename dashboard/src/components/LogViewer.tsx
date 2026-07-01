@@ -16,12 +16,12 @@ export function LogViewer({ logs }: { logs: LogEntry[] }) {
           <span>Rule</span>
           <span>Message</span>
         </div>
-        {logs.slice(-80).map((log) => (
+        {logs.slice(-12).map((log) => (
           <div key={log.id} className={`log-entry ${log.level}`}>
             <span>{log.createdAt}</span>
             <strong>{log.level}</strong>
-            <span className="log-rule">{log.rule ?? "trace"}</span>
-            <p>{log.message}</p>
+            <span className="log-rule" title={log.rule ?? "trace"}>{log.rule ?? "trace"}</span>
+            <p title={log.message} className="truncate-cell">{log.message}</p>
           </div>
         ))}
       </div>

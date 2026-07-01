@@ -22,6 +22,9 @@ describe("backend-only dashboard UI", () => {
     expect(reviewerPanelSource.match(/Run Backend Agent/g)).toHaveLength(1);
     expect(reviewerPanelSource).toContain("send + mint");
     expect(appSource).toContain("Agent Telemetry");
+    expect(appSource).toContain("telemetryRef.current?.scrollIntoView");
+    expect(appSource).toContain("id=\"agent-telemetry\"");
+    expect(appSource).toContain("telemetry-summary");
     expect(appSource).toContain("OperatingRules");
     expect(operatingRulesSource).toContain("Operating Rules");
     expect(logViewerSource).toContain("rule tag");

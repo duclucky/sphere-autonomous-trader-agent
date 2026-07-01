@@ -171,6 +171,82 @@ small {
   overflow: auto;
 }
 
+.telemetry-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 8px;
+}
+
+.telemetry-summary div {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: #08101a;
+  padding: 10px 12px;
+}
+
+.telemetry-summary strong {
+  display: block;
+  color: #ffad61;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.telemetry-summary span {
+  display: block;
+  margin-top: 3px;
+  color: #98a4b5;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.telemetry-grid section {
+  margin-top: 0;
+}
+
+.telemetry-grid > section,
+.telemetry-grid > .telemetry-cell {
+  min-width: 0;
+}
+
+.telemetry-grid > .telemetry-logs {
+  grid-column: 1 / -1;
+}
+
+.telemetry-grid .table-wrap,
+.telemetry-grid .messages,
+.telemetry-grid .logs {
+  max-height: 320px;
+}
+
+.telemetry-grid .table-wrap table {
+  table-layout: fixed;
+}
+
+.telemetry-grid h2 {
+  margin-bottom: 8px;
+}
+
+.mono-cell {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+}
+
+.truncate-cell {
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .section-heading {
   display: flex;
   align-items: flex-start;
@@ -313,7 +389,7 @@ pre {
 }
 
 .legacy-telemetry > .muted {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .reviewer-panel {
@@ -643,6 +719,11 @@ dd {
     grid-template-columns: 1fr;
   }
 
+  .telemetry-summary,
+  .telemetry-grid {
+    grid-template-columns: 1fr;
+  }
+
   .reviewer-grid, .backend-agent-card, .agent-flow {
     grid-template-columns: 1fr;
   }
@@ -678,5 +759,9 @@ dd {
 
   .rule-trace {
     flex-direction: column;
+  }
+
+  .telemetry-grid > .telemetry-logs {
+    grid-column: auto;
   }
 }

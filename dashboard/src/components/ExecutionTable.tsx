@@ -1,5 +1,9 @@
 import type { ExecutionRecord } from "../types";
 
+function shortId(value: string) {
+  return value.length <= 20 ? value : `${value.slice(0, 10)}…${value.slice(-6)}`;
+}
+
 export function ExecutionTable({ executions }: { executions: ExecutionRecord[] }) {
   return (
     <section>
@@ -12,9 +16,9 @@ export function ExecutionTable({ executions }: { executions: ExecutionRecord[] }
               <tr key={execution.id}>
                 <td>{execution.status}</td>
                 <td><span className={`mode-inline ${execution.mode === "real" ? "real" : "dry"}`}>{execution.mode}</span></td>
-                <td>{execution.txId}</td>
+                <td title={execution.txId} className="mono-cell">{shortId(execution.txId)}</td>
                 <td>{execution.amount} {execution.token}</td>
-                <td>{execution.note}</td>
+                <td title={execution.note} className="truncate-cell">{execution.note}</td>
               </tr>
             ))}
           </tbody>
