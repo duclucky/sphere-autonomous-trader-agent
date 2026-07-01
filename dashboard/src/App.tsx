@@ -6,7 +6,9 @@ import { ExecutionTable } from "./components/ExecutionTable";
 import { IntentTable } from "./components/IntentTable";
 import { LogViewer } from "./components/LogViewer";
 import { NegotiationPanel } from "./components/NegotiationPanel";
+import { ReviewerDemoPanel } from "./components/ReviewerDemoPanel";
 import { demoDashboardState, fetchDashboardState, startAgent, stopAgent, type StatusResponse } from "./api";
+import { backendActionOfflineMessage, backendOfflineMessage } from "./backendOffline";
 import type { Decision, ExecutionRecord, LogEntry, MarketIntent, NegotiationMessage } from "./types";
 import "./styles.css";
 
@@ -30,7 +32,7 @@ export default function App() {
       setError(null);
     } catch (err) {
       setData(demoDashboardState());
-      setError(`Backend offline. Showing demo data. ${err instanceof Error ? err.message : String(err)}`);
+      setError(backendOfflineMessage(err));
     }
   };
 
@@ -46,7 +48,7 @@ export default function App() {
       await refresh();
     } catch (err) {
       setData(demoDashboardState());
-      setError(`Backend offline. Cannot start agent from static preview. ${err instanceof Error ? err.message : String(err)}`);
+      setError(backendActionOfflineMessage("start", err));
     }
   };
 
@@ -56,7 +58,7 @@ export default function App() {
       await refresh();
     } catch (err) {
       setData(demoDashboardState());
-      setError(`Backend offline. Cannot stop agent from static preview. ${err instanceof Error ? err.message : String(err)}`);
+      setError(backendActionOfflineMessage("stop", err));
     }
   };
 
@@ -69,12 +71,17 @@ export default function App() {
       <header className="topbar">
         <div>
           <h1>Sphere Autonomous Trader Agent</h1>
-          <p>Autonomous Agents track dashboard</p>
+          <p>Reviewer wallet connect and autonomous Testnet v2 demo</p>
         </div>
-        <div className={`mode ${data.status.mode === "real" ? "real" : "dry"}`}>{data.status.mode === "real" ? "real testnet" : "mock dry-run"}</div>
+        <div className="topbar-actions">
+          <button onClick={() => document.getElementById("reviewer-connect")?.click()} type="button">Connect Wallet</button>
+          <div className={`mode ${data.status.mode === "real" ? "real" : "dry"}`}>{data.status.mode === "real" ? "real testnet" : "mock dry-run"}</div>
+        </div>
       </header>
 
       {error ? <div className="notice error">{error}</div> : null}
+
+      <ReviewerDemoPanel />
 
       <AgentStatus status={data.status} onStart={handleStart} onStop={handleStop} />
 

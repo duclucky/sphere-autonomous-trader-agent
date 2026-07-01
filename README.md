@@ -46,9 +46,58 @@ npm run dev
 
 `npm run dev` starts the local API at `http://127.0.0.1:8787` and dashboard at `http://127.0.0.1:5173`.
 
+## Reviewer Wallet Demo
+
+The deployed dashboard is reviewer-first. It renders without a localhost backend and lets reviewers connect a Sphere wallet through Sphere Connect v2.
+
+Reviewer flow:
+
+1. Open the Vercel app URL.
+2. Click `Connect Wallet` in the header or hero.
+3. Approve the Sphere Connect session in the wallet.
+4. Confirm the dashboard shows wallet address, nametag or identity, Testnet v2 network, balance, transport, and signing capability.
+5. Select `Dry-run demo` or `Real testnet demo`.
+6. Set strict limits: max trade amount, max executions, daily cap, allowed token/testnet coin id, and destination/counterparty.
+7. Click `Start Reviewer Demo`.
+8. Watch the flow: Connect Wallet -> Configure Limits -> Start Agent -> Scan Intent -> Decide -> Negotiate -> Execute -> Show Proof.
+
+### Dry-run Demo
+
+Dry-run mode does not require a connected wallet and never moves value. Intent scan, decision, negotiation, execution, and proof are simulated and labeled `DRY-RUN` or `DEMO`.
+
+### Real Testnet Demo
+
+Real testnet mode uses verified Sphere Connect v2 surfaces from `@unicitylabs/sphere-sdk` v0.11.0:
+
+- `autoConnect`
+- `SPHERE_NETWORKS.testnet2`
+- `sphere_getIdentity`
+- `sphere_getBalance`
+- `sphere_getAssets`
+- `payment_request` or `send` compatible wallet intent surfaces
+
+The current reviewer flow executes a tiny `payment_request` intent through the connected wallet when policy allows it. Live intent discovery and negotiation are demo-labeled unless a live counterparty is configured. The value-moving wallet intent is labeled `REAL TESTNET`.
+
+Wallet security may require approval for each real intent. The agent still decides autonomously when to request execution after the reviewer configures limits and clicks Start.
+
+### Safety Limits
+
+Real mode fails closed unless:
+
+- a wallet is connected
+- the wallet is on Testnet v2 (`network.id === 4`)
+- the reviewer explicitly clicked Start
+- the amount is within `MAX_TRADE_AMOUNT`
+- max executions for the run is not exceeded
+- daily cap is not exceeded
+- the configured token is a 64-hex testnet coin id
+- the idempotency key has not executed before
+
+The browser never asks for or stores a private key or seed. `SPHERE_WALLET_SEED` is local/server-only and must never be exposed as a `VITE_` variable.
+
 ## Vercel deployment
 
-Deploy only the static dashboard on Vercel. The local Express agent API is not deployed by this configuration, so the dashboard renders demo data and shows a backend-offline notice when `/api/*` is unavailable.
+Deploy the dashboard on Vercel with the reviewer wallet demo as the primary page. The local Express agent API is not required for the first render. Vercel `/api/*` routes are demo-only fallback data for the legacy tables; reviewer wallet connect and real testnet approval run client-side through Sphere Connect.
 
 Use these Vercel project settings:
 
@@ -58,11 +107,21 @@ Use these Vercel project settings:
 
 The dashboard folder has its own `package.json`, `index.html`, and Vite config. Its build output is `dashboard/dist`.
 
+Set public reviewer variables in Vercel as needed:
+
+- `VITE_PUBLIC_APP_MODE=reviewer-demo`
+- `VITE_SPHERE_NETWORK=testnet-v2`
+- `VITE_SPHERE_WALLET_URL=https://sphere.unicity.network`
+- `VITE_SPHERE_TESTNET_COIN_ID=<64-hex testnet coin id>`
+- `VITE_SPHERE_DEMO_COUNTERPARTY=@autointent-trader` or a `DIRECT://...` address
+
 ## Real Testnet Notes
 
 Real mode requires a valid wallet mnemonic in `SPHERE_WALLET_SEED`. The SDK docs identify `testnet`/`testnet2` as the v2 network aliases; this project keeps the user-facing env value `testnet-v2` and maps it to SDK `testnet2`.
 
 Value movement is testnet-ready only through verified SDK calls. If `SPHERE_ESCROW_ADDRESS` is set, execution prefers `sphere.swap.proposeSwap`; otherwise it falls back to `sphere.payments.send`.
+
+For the deployed reviewer demo, real testnet execution does not use `SPHERE_WALLET_SEED`; it uses the reviewer's connected wallet through Sphere Connect. For local seeded agent demos, keep secrets only in `.env` on the server/operator machine.
 
 ## Safety
 
