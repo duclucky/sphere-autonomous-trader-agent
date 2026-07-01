@@ -6,7 +6,7 @@ import { newId } from "../utils/ids";
 export function createRoutes(runtime: AgentRuntime): Router {
   const router = Router();
   let serverDemoRunning = false;
-  let serverDemoRunsStarted = 0;
+  let serverDemoRunsConsumed = 0;
 
   router.get("/status", (_req, res) => {
     const state = runtime.store.getState();
@@ -53,7 +53,7 @@ export function createRoutes(runtime: AgentRuntime): Router {
       res.status(409).json({ running: true, message: "Server seeded demo is already running." });
       return;
     }
-    if (serverDemoRunsStarted >= options.maxRuns) {
+    if (serverDemoRunsConsumed >= options.maxRuns) {
       res.status(429).json({ running: false, message: `Server seeded demo run limit reached (${options.maxRuns}). Increase SERVER_DEMO_MAX_RUNS or redeploy to run again.` });
       return;
     }
@@ -65,8 +65,12 @@ export function createRoutes(runtime: AgentRuntime): Router {
 
     const runId = newId("server-demo");
     serverDemoRunning = true;
-    serverDemoRunsStarted += 1;
     void runServerSeededDemo({ config: runtime.config, store: runtime.store, adapter: runtime.adapter, options, runId })
+      .then((result) => {
+        if (result.completed > 0) {
+          serverDemoRunsConsumed += 1;
+        }
+      })
       .finally(() => {
         serverDemoRunning = false;
       });
