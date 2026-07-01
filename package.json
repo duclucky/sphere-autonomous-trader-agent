@@ -15,8 +15,8 @@
     "dev": "concurrently \"npm:api:dev\" \"npm:dashboard:dev\""
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
     "@unicitylabs/sphere-sdk": "^0.11.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -25,6 +25,7 @@
     "react-dom": "^18.3.1",
     "tsx": "^4.19.2",
     "vite": "^6.0.7",
+    "ws": "^8.21.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
