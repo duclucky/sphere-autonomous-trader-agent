@@ -70,6 +70,11 @@ function makeSteps(mode: ReviewerDemoMode, executeStatus: ReviewerStepStatus, pr
   }));
 }
 
+function toBaseUnitAmount(amount: number): string {
+  if (!Number.isFinite(amount) || amount <= 0) return "1";
+  return Math.max(1, Math.ceil(amount)).toString();
+}
+
 export async function runReviewerDemo(input: ReviewerRunInput): Promise<ReviewerRunResult> {
   const walletState = await input.wallet.getState();
   const policy = evaluateReviewerPolicy({
@@ -121,7 +126,7 @@ export async function runReviewerDemo(input: ReviewerRunInput): Promise<Reviewer
 
   const intent = await input.wallet.requestIntent("payment_request", {
     to: input.counterparty,
-    amount: input.amount.toString(),
+    amount: toBaseUnitAmount(input.amount),
     coinId: input.limits.allowedToken,
     message: "AutoIntent Trader reviewer demo"
   });

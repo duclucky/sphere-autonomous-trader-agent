@@ -10,9 +10,9 @@ const fallbackDemoCoinId = "1111111111111111111111111111111111111111111111111111
 const defaultCoinId = import.meta.env.VITE_SPHERE_TESTNET_COIN_ID || fallbackDemoCoinId;
 const defaultCounterparty = import.meta.env.VITE_SPHERE_DEMO_COUNTERPARTY ?? "@autointent-trader";
 const safeDefaultLimits: ReviewerLimits = {
-  maxTradeAmount: 0.01,
+  maxTradeAmount: 1,
   maxExecutions: 1,
-  dailyCap: 1,
+  dailyCap: 5,
   allowedToken: defaultCoinId
 };
 
@@ -50,7 +50,7 @@ export function ReviewerDemoPanel({ adapter }: { adapter?: SphereWalletAdapter }
   const [wallet, setWallet] = useState<WalletConnectionState>(disconnectedWalletState());
   const [mode, setMode] = useState<ReviewerDemoMode>("dry-run");
   const [limits, setLimits] = useState<ReviewerLimits>(safeDefaultLimits);
-  const [amount, setAmount] = useState(0.01);
+  const [amount, setAmount] = useState(1);
   const [counterparty, setCounterparty] = useState(defaultCounterparty);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [steps, setSteps] = useState<ReviewerStep[]>(initialSteps);
@@ -109,7 +109,7 @@ export function ReviewerDemoPanel({ adapter }: { adapter?: SphereWalletAdapter }
 
   const useSafeDefaults = () => {
     setLimits(safeDefaultLimits);
-    setAmount(0.01);
+    setAmount(1);
     setCounterparty(defaultCounterparty);
     setStatusText("SAFE DEFAULTS LOADED");
   };
@@ -161,7 +161,7 @@ export function ReviewerDemoPanel({ adapter }: { adapter?: SphereWalletAdapter }
             <button className={mode === "real-testnet" ? "selected" : ""} onClick={() => setMode("real-testnet")} type="button">Real testnet demo</button>
           </div>
           <div className="config-summary">
-            <div><strong>{amount}</strong><span>max demo amount</span></div>
+            <div><strong>{amount}</strong><span>base-unit amount</span></div>
             <div><strong>{limits.maxExecutions}</strong><span>execution per run</span></div>
             <div><strong>{limits.dailyCap}</strong><span>daily cap</span></div>
           </div>
@@ -190,8 +190,8 @@ export function ReviewerDemoPanel({ adapter }: { adapter?: SphereWalletAdapter }
                 <input min="0.000001" step="0.01" type="number" value={limits.dailyCap} onChange={(event) => setLimits({ ...limits, dailyCap: Number(event.target.value) })} />
               </label>
               <label>
-                Amount
-                <input min="0.000001" step="0.01" type="number" value={amount} onChange={(event) => setAmount(Number(event.target.value))} />
+                Amount (base units)
+                <input min="1" step="1" type="number" value={amount} onChange={(event) => setAmount(Number(event.target.value))} />
               </label>
               <label>
                 Allowed token / testnet coin id
