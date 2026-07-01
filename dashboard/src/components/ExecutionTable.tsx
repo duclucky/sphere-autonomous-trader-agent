@@ -1,4 +1,4 @@
-import type { ExecutionRecord } from "../../../src/storage/types";
+import type { ExecutionRecord } from "../types";
 
 export function ExecutionTable({ executions }: { executions: ExecutionRecord[] }) {
   return (

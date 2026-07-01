@@ -1,4 +1,4 @@
-import type { LogEntry } from "../../../src/storage/types";
+import type { LogEntry } from "../types";
 
 export function LogViewer({ logs }: { logs: LogEntry[] }) {
   return (

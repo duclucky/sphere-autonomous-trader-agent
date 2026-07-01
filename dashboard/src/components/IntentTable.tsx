@@ -1,4 +1,4 @@
-import type { MarketIntent } from "../../../src/storage/types";
+import type { MarketIntent } from "../types";
 
 export function IntentTable({ intents }: { intents: MarketIntent[] }) {
   return (

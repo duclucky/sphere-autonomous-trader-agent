@@ -1,4 +1,4 @@
-import type { NegotiationMessage } from "../../../src/storage/types";
+import type { NegotiationMessage } from "../types";
 
 export function NegotiationPanel({ negotiations }: { negotiations: NegotiationMessage[] }) {
   return (

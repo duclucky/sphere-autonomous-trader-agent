@@ -1,4 +1,4 @@
-import type { Decision } from "../../../src/storage/types";
+import type { Decision } from "../types";
 
 export function DecisionTable({ decisions }: { decisions: Decision[] }) {
   return (

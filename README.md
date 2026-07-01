@@ -46,6 +46,18 @@ npm run dev
 
 `npm run dev` starts the local API at `http://127.0.0.1:8787` and dashboard at `http://127.0.0.1:5173`.
 
+## Vercel deployment
+
+Deploy only the static dashboard on Vercel. The local Express agent API is not deployed by this configuration, so the dashboard renders demo data and shows a backend-offline notice when `/api/*` is unavailable.
+
+Use these Vercel project settings:
+
+- Root Directory: `dashboard`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+
+The dashboard folder has its own `package.json`, `index.html`, and Vite config. Its build output is `dashboard/dist`.
+
 ## Real Testnet Notes
 
 Real mode requires a valid wallet mnemonic in `SPHERE_WALLET_SEED`. The SDK docs identify `testnet`/`testnet2` as the v2 network aliases; this project keeps the user-facing env value `testnet-v2` and maps it to SDK `testnet2`.

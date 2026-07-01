@@ -6,8 +6,8 @@ import { ExecutionTable } from "./components/ExecutionTable";
 import { IntentTable } from "./components/IntentTable";
 import { LogViewer } from "./components/LogViewer";
 import { NegotiationPanel } from "./components/NegotiationPanel";
-import { fetchDashboardState, startAgent, stopAgent, type StatusResponse } from "./api";
-import type { Decision, ExecutionRecord, LogEntry, MarketIntent, NegotiationMessage } from "../../src/storage/types";
+import { demoDashboardState, fetchDashboardState, startAgent, stopAgent, type StatusResponse } from "./api";
+import type { Decision, ExecutionRecord, LogEntry, MarketIntent, NegotiationMessage } from "./types";
 import "./styles.css";
 
 interface DashboardData {
@@ -29,7 +29,8 @@ export default function App() {
       setData(next);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setData(demoDashboardState());
+      setError(`Backend offline. Showing demo data. ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -40,13 +41,23 @@ export default function App() {
   }, []);
 
   const handleStart = async () => {
-    await startAgent();
-    await refresh();
+    try {
+      await startAgent();
+      await refresh();
+    } catch (err) {
+      setData(demoDashboardState());
+      setError(`Backend offline. Cannot start agent from static preview. ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   const handleStop = async () => {
-    await stopAgent();
-    await refresh();
+    try {
+      await stopAgent();
+      await refresh();
+    } catch (err) {
+      setData(demoDashboardState());
+      setError(`Backend offline. Cannot stop agent from static preview. ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   if (!data) {
