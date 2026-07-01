@@ -56,7 +56,8 @@ export class MockSphereAdapter implements SphereAdapter {
     return {
       txId: stableId("dry-run-tx", request.idempotencyKey),
       status: "simulated",
-      note: "Mock dry-run execution only. No real Sphere Testnet v2 value moved."
+      note: "Mock dry-run execution only. No real Sphere Testnet v2 value moved.",
+      realizedProfitPct: undefined
     };
   }
 }

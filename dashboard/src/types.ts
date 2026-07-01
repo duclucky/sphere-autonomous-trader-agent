@@ -55,6 +55,7 @@ export interface ExecutionRecord {
   counterparty: string;
   createdAt: string;
   note: string;
+  realizedProfitPct?: number;
 }
 
 export interface LogEntry {

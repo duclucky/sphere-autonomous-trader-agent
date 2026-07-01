@@ -159,7 +159,8 @@ export class RealSphereAdapter implements SphereAdapter {
     return {
       txId: result.id ?? request.idempotencyKey,
       status: result.status === "completed" ? "confirmed" : "submitted",
-      note: result.deliveryPending ? `Certified by SDK send; mailbox delivery pending. coinId=${coinId}` : `Executed through Sphere payments.send. coinId=${coinId}`
+      note: result.deliveryPending ? `Certified by SDK send; mailbox delivery pending. coinId=${coinId}` : `Executed through Sphere payments.send. coinId=${coinId}`,
+      realizedProfitPct: undefined
     };
   }
 
@@ -195,10 +196,13 @@ export class RealSphereAdapter implements SphereAdapter {
     }
 
     const txId = `${sendResult.id ?? request.idempotencyKey}+${mintResult.tokenId ?? toCoinId}`;
+    const realizedRate = Number(plan.toAmount) / plan.fromAmount;
+    const realizedProfitPct = plan.rate > 0 ? (realizedRate - plan.rate) / plan.rate : 0;
     return {
       txId,
       status: sendResult.status === "completed" ? "confirmed" : "submitted",
-      note: `Wallet swap executed: sent ${fromAmount} ${plan.fromToken} to ${plan.recipient}, minted ${plan.toAmount} ${plan.toToken} at configured rate ${plan.rate}.`
+      note: `Wallet swap executed: sent ${fromAmount} ${plan.fromToken} to ${plan.recipient}, minted ${plan.toAmount} ${plan.toToken} at configured rate ${plan.rate}.`,
+      realizedProfitPct
     };
   }
 

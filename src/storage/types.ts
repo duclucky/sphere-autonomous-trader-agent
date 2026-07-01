@@ -81,6 +81,7 @@ export interface ExecutionRecord {
   counterparty: string;
   createdAt: string;
   note: string;
+  realizedProfitPct?: number;
 }
 
 export interface LogEntry {
@@ -122,6 +123,7 @@ export interface ExecuteValueTransferResult {
   txId: string;
   status: ExecutionRecord["status"];
   note: string;
+  realizedProfitPct?: number;
 }
 
 export interface WalletSwapPlan {

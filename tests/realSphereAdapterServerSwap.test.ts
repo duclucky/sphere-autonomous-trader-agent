@@ -122,7 +122,8 @@ describe("RealSphereAdapter wallet swap execution", () => {
     expect(result).toEqual({
       txId: "send-tx+minted-uct",
       status: "confirmed",
-      note: "Wallet swap executed: sent 1 BTC to sphere-swap, minted 2 UCT at configured rate 2."
+      note: "Wallet swap executed: sent 1 BTC to sphere-swap, minted 2 UCT at configured rate 2.",
+      realizedProfitPct: 0
     });
   });
 });

@@ -246,7 +246,8 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
         amount: intent.amount,
         counterparty: intent.counterparty,
         createdAt: now(),
-        note: result.note
+        note: result.note,
+        realizedProfitPct: result.realizedProfitPct
       };
       store.saveExecution(execution);
       completed += 1;

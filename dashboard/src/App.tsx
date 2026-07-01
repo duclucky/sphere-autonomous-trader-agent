@@ -85,7 +85,7 @@ export default function App() {
             <IntentTable intents={data.intents} />
           </div>
           <div className="telemetry-cell telemetry-decisions">
-            <DecisionTable decisions={data.decisions} />
+            <DecisionTable decisions={data.decisions} executions={data.executions} />
           </div>
           <div className="telemetry-cell telemetry-negotiations">
             <NegotiationPanel negotiations={data.negotiations} />
