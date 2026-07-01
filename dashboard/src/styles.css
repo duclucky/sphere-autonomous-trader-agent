@@ -257,6 +257,24 @@ pre {
   color: #ffb4ad;
 }
 
+.legacy-telemetry {
+  margin-top: 20px;
+}
+
+.legacy-telemetry summary {
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: #0c121c;
+  padding: 14px 16px;
+  color: #cbd3df;
+  font-weight: 800;
+}
+
+.legacy-telemetry > .muted {
+  margin-top: 12px;
+}
+
 .reviewer-panel {
   display: grid;
   gap: 18px;

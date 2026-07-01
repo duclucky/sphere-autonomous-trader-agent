@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { AgentStatus } from "./components/AgentStatus";
 import { DecisionTable } from "./components/DecisionTable";
 import { ExecutionTable } from "./components/ExecutionTable";
 import { IntentTable } from "./components/IntentTable";
 import { LogViewer } from "./components/LogViewer";
 import { NegotiationPanel } from "./components/NegotiationPanel";
 import { ReviewerDemoPanel } from "./components/ReviewerDemoPanel";
-import { demoDashboardState, fetchDashboardState, startAgent, stopAgent, type StatusResponse } from "./api";
-import { backendActionOfflineMessage, backendOfflineMessage } from "./backendOffline";
+import { demoDashboardState, fetchDashboardState, type StatusResponse } from "./api";
+import { backendOfflineMessage } from "./backendOffline";
 import type { Decision, ExecutionRecord, LogEntry, MarketIntent, NegotiationMessage } from "./types";
 import "./styles.css";
 
@@ -42,26 +41,6 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const handleStart = async () => {
-    try {
-      await startAgent();
-      await refresh();
-    } catch (err) {
-      setData(demoDashboardState());
-      setError(backendActionOfflineMessage("start", err));
-    }
-  };
-
-  const handleStop = async () => {
-    try {
-      await stopAgent();
-      await refresh();
-    } catch (err) {
-      setData(demoDashboardState());
-      setError(backendActionOfflineMessage("stop", err));
-    }
-  };
-
   if (!data) {
     return <main className="shell"><div className="notice">{error ?? "Loading agent state..."}</div></main>;
   }
@@ -79,23 +58,23 @@ export default function App() {
         </div>
       </header>
 
-      {error ? <div className="notice error">{error}</div> : null}
+      {error ? <div className="notice">{error}</div> : null}
 
       <ReviewerDemoPanel />
 
-      <AgentStatus status={data.status} onStart={handleStart} onStop={handleStop} />
-
-      <section className="grid two">
-        <IntentTable intents={data.intents} />
-        <DecisionTable decisions={data.decisions} />
-      </section>
-
-      <section className="grid two">
-        <NegotiationPanel negotiations={data.negotiations} />
-        <ExecutionTable executions={data.executions} />
-      </section>
-
-      <LogViewer logs={data.logs} />
+      <details className="legacy-telemetry">
+        <summary>Legacy agent telemetry</summary>
+        <p className="muted">These tables are supporting telemetry. Use the Reviewer Demo panel above to start the reviewer flow.</p>
+        <section className="grid two">
+          <IntentTable intents={data.intents} />
+          <DecisionTable decisions={data.decisions} />
+        </section>
+        <section className="grid two">
+          <NegotiationPanel negotiations={data.negotiations} />
+          <ExecutionTable executions={data.executions} />
+        </section>
+        <LogViewer logs={data.logs} />
+      </details>
     </main>
   );
 }
