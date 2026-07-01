@@ -1,4 +1,5 @@
 import type { SphereAdapter } from "./SphereAdapter";
+import { chooseSpendableCoinId, type SpendableCoinAsset } from "./coinSelection";
 import { normalizeMarketCounterparty } from "../utils/counterparty";
 import type {
   AgentConfig,
@@ -28,7 +29,10 @@ type SphereLike = {
     }>;
   };
   communications?: { sendDM(recipient: string, content: string): Promise<{ id: string }> };
-  payments?: { send(request: { recipient: string; amount: string; coinId: string; memo?: string }): Promise<{ id?: string; status: string; deliveryPending?: boolean }> };
+  payments?: {
+    send(request: { recipient: string; amount: string; coinId: string; memo?: string }): Promise<{ id?: string; status: string; deliveryPending?: boolean }>;
+    getAssets?(coinId?: string): Promise<SpendableCoinAsset[]>;
+  };
   swap?: {
     proposeSwap(
       deal: {
@@ -110,11 +114,12 @@ export class RealSphereAdapter implements SphereAdapter {
   async executeValueTransfer(request: ExecuteValueTransferRequest): Promise<ExecuteValueTransferResult> {
     const sphere = await this.getSphere();
     if (this.config.escrowAddress && sphere.swap?.proposeSwap && sphere.identity?.directAddress) {
+      const coinId = await this.resolveSpendableCoinId(sphere, request.intent.token, request.intent.amount);
       const swap = await sphere.swap.proposeSwap(
         {
           partyA: sphere.identity.directAddress,
           partyB: request.intent.counterparty,
-          partyACurrency: request.intent.token,
+          partyACurrency: coinId,
           partyAAmount: String(Math.trunc(request.intent.amount)),
           partyBCurrency: "UCT",
           partyBAmount: String(Math.max(1, Math.trunc(request.intent.amount * request.intent.price))),
@@ -133,10 +138,11 @@ export class RealSphereAdapter implements SphereAdapter {
     if (!sphere.payments?.send) {
       this.failUnverified("RealSphereAdapter.executeValueTransfer");
     }
+    const coinId = await this.resolveSpendableCoinId(sphere, request.intent.token, request.intent.amount);
     const result = await sphere.payments.send({
       recipient: request.intent.counterparty,
       amount: String(Math.trunc(request.intent.amount)),
-      coinId: request.intent.token,
+      coinId,
       memo: `Autonomous execution for ${request.intent.id}; idempotency=${request.idempotencyKey}`
     });
     return {
@@ -184,6 +190,17 @@ export class RealSphereAdapter implements SphereAdapter {
     });
     this.sphere = initResult.sphere as SphereLike;
     return this.sphere;
+  }
+
+  private async resolveSpendableCoinId(sphere: SphereLike, preferredToken: string, amount: number): Promise<string> {
+    const assets = await sphere.payments?.getAssets?.().catch(() => undefined);
+    if (assets && assets.length > 0) {
+      const selected = chooseSpendableCoinId(assets, preferredToken, amount);
+      if (selected) {
+        return selected;
+      }
+    }
+    return preferredToken;
   }
 
   private failUnverified(functionName: string): never {

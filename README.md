@@ -92,6 +92,7 @@ Wallet security may require approval for each real intent. The agent still decid
 The `Run Backend Agent` button calls the Render backend route `POST /api/server-demo/start`. This mode does not connect a reviewer wallet. It uses the server-side `SPHERE_WALLET_SEED` already configured on Render and writes directly to the legacy telemetry tables.
 
 Backend seeded mode is disabled unless `ENABLE_SERVER_DEMO=true` is set on the backend. The route is capped by `MAX_EXECUTIONS_PER_SERVER_DEMO` with a hard maximum of 20, and `SERVER_DEMO_MAX_RUNS` defaults to 1 per backend process to prevent repeated public triggering.
+Before each send, the backend inspects the wallet inventory and picks a spendable coin object for the configured token symbol, so it can move on to the next funded coin object when one runs out.
 
 ### Safety Limits
 
