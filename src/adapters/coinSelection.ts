@@ -2,6 +2,8 @@ export interface SpendableCoinAsset {
   coinId: string;
   symbol: string;
   totalAmount: string;
+  priceUsd?: number | null;
+  fiatValueUsd?: number | null;
 }
 
 function normalizeToken(value: string): string {

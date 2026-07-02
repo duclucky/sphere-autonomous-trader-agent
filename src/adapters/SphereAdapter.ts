@@ -7,6 +7,7 @@ import type {
   NegotiationMessage,
   WalletIdentity
 } from "../storage/types";
+import type { SpendableCoinAsset } from "./coinSelection";
 
 export interface SphereAdapter {
   readonly mode: AgentConfig["mode"];
@@ -14,4 +15,5 @@ export interface SphereAdapter {
   scanIntents(filters: IntentFilters): Promise<MarketIntent[]>;
   sendDirectMessage(message: Omit<NegotiationMessage, "id" | "createdAt" | "status">): Promise<NegotiationMessage>;
   executeValueTransfer(request: ExecuteValueTransferRequest): Promise<ExecuteValueTransferResult>;
+  getWalletAssets?(): Promise<SpendableCoinAsset[]>;
 }

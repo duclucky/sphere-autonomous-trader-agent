@@ -3,6 +3,7 @@ import type { SphereAdapter } from "../src/adapters/SphereAdapter";
 import { loadServerSeededDemoOptions, runServerSeededDemo, validateServerSeededDemoStart } from "../src/api/serverSeededDemo";
 import { LocalStore } from "../src/storage/LocalStore";
 import type { AgentConfig, ExecuteValueTransferRequest } from "../src/storage/types";
+import type { SpendableCoinAsset } from "../src/adapters/coinSelection";
 
 const config: AgentConfig = {
   network: "testnet-v2",
@@ -25,7 +26,7 @@ const config: AgentConfig = {
 const testCoinId = "1111111111111111111111111111111111111111111111111111111111111111";
 const testTokenSymbol = "UCT";
 
-function createAdapter(failAt?: number): SphereAdapter & { requests: ExecuteValueTransferRequest[] } {
+function createAdapter(failAt?: number, assets: SpendableCoinAsset[] = []): SphereAdapter & { requests: ExecuteValueTransferRequest[] } {
   const requests: ExecuteValueTransferRequest[] = [];
   return {
     mode: "real",
@@ -38,6 +39,9 @@ function createAdapter(failAt?: number): SphereAdapter & { requests: ExecuteValu
     },
     async sendDirectMessage(message) {
       return { ...message, id: "dm", createdAt: new Date().toISOString(), status: "simulated" };
+    },
+    async getWalletAssets() {
+      return assets;
     },
     async executeValueTransfer(request) {
       requests.push(request);
@@ -117,6 +121,53 @@ describe("server seeded wallet demo", () => {
     expect(state.executions[0].executedRate).toBe(2.25);
     expect(state.executions[0].realizedProfitPct).toBe(0.125);
     expect(state.logs.some((log) => log.message.includes("completed 20/20"))).toBe(true);
+  });
+
+  it("derives preview prices from live wallet asset valuations when available", async () => {
+    const store = new LocalStore(":memory:");
+    const adapter = createAdapter(undefined, [
+      { coinId: "btc", symbol: "BTC", totalAmount: "1", priceUsd: 60000 },
+      { coinId: "uct", symbol: "UCT", totalAmount: "1000", priceUsd: 1 }
+    ]);
+    adapter.executeValueTransfer = async (request) => {
+      adapter.requests.push(request);
+      return {
+        txId: "tx-market",
+        status: "submitted",
+        note: "market quote echoed",
+        quotedRate: request.walletSwap?.rate,
+        executedRate: request.walletSwap?.rate,
+        realizedProfitPct: 0
+      };
+    };
+
+    const result = await runServerSeededDemo({
+      config,
+      store,
+      adapter,
+      options: {
+        enabled: true,
+        executions: 1,
+        maxRuns: 1,
+        amount: 1,
+        dailyCap: 1,
+        counterparty: "sphere-swap",
+        token: "BTC",
+        fromToken: "BTC",
+        toToken: testTokenSymbol,
+        rate: 1
+      },
+      runId: "server-run-market"
+    });
+
+    const state = store.getState();
+    expect(result.status).toBe("complete");
+    expect(state.intents[0].price).toBe(60000);
+    expect(state.intents[0].fairValue).toBe(61800);
+    expect(adapter.requests[0].walletSwap?.rate).toBe(60000);
+    expect(adapter.requests[0].walletSwap?.toAmount).toBe("60000");
+    expect(state.negotiations[0].body).toContain("60000");
+    expect(state.decisions[0].reason).toContain("market quote");
   });
 
   it("rejects unsafe server demo options before execution starts", () => {

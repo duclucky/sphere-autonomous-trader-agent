@@ -203,11 +203,17 @@ export class RealSphereAdapter implements SphereAdapter {
     return {
       txId,
       status: sendResult.status === "completed" ? "confirmed" : "submitted",
-      note: `Wallet swap executed: sent ${fromAmount} ${plan.fromToken} to ${plan.recipient}, minted ${plan.toAmount} ${plan.toToken} at configured rate ${plan.rate}.`,
+      note: `Wallet swap executed: sent ${fromAmount} ${plan.fromToken} to ${plan.recipient}, minted ${plan.toAmount} ${plan.toToken} at quote rate ${plan.rate}.`,
       quotedRate: plan.rate,
       executedRate: realizedRate,
       realizedProfitPct
     };
+  }
+
+  async getWalletAssets(): Promise<SpendableCoinAsset[]> {
+    const sphere = await this.getSphere();
+    const assets = await sphere.payments?.getAssets?.().catch(() => undefined);
+    return (assets ?? []) as SpendableCoinAsset[];
   }
 
   private async getSphere(): Promise<SphereLike> {
@@ -229,7 +235,8 @@ export class RealSphereAdapter implements SphereAdapter {
       network: "testnet2",
       dataDir: "./data/wallet",
       tokensDir: "./data/tokens",
-      oracle: { apiKey: this.config.oracleApiKey }
+      oracle: { apiKey: this.config.oracleApiKey },
+      price: { platform: "coingecko" }
     });
     const providers = createWalletApiProviders(base, {
       baseUrl: this.config.walletApiBaseUrl,

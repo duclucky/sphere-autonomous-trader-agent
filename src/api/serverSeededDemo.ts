@@ -1,4 +1,5 @@
 import type { SphereAdapter } from "../adapters/SphereAdapter";
+import { buildMarketPriceMap, resolveMarketRate } from "../market/quotes";
 import type { LocalStore } from "../storage/LocalStore";
 import type { AgentConfig, Decision, ExecutionRecord, MarketIntent, NegotiationMessage } from "../storage/types";
 import { stableId } from "../utils/ids";
@@ -134,43 +135,46 @@ function swapPairsForOptions(options: ServerSeededDemoOptions): ServerDemoSwapPa
   return options.swapPairs?.length ? options.swapPairs : [{ fromToken: options.fromToken, toToken: options.toToken, rate: options.rate }];
 }
 
-function makeIntent(input: ServerSeededDemoInput, index: number): MarketIntent {
+function makeIntent(input: ServerSeededDemoInput, index: number, marketRate?: number): MarketIntent {
   const timestamp = now();
   const pair = swapPairForIndex(input.options, index);
+  const quoteRate = marketRate ?? pair.rate;
   return {
     id: stableId("server-intent", `${input.runId}:${index}`),
     counterparty: input.options.counterparty,
     side: "sell",
     token: pair.fromToken,
     amount: input.options.amount,
-    price: pair.rate,
-    fairValue: pair.rate * (1 + input.config.minProfitThreshold),
+    price: quoteRate,
+    fairValue: quoteRate * (1 + input.config.minProfitThreshold),
     keywords: ["server-seeded", "autonomous", "wallet-swap", "testnet"],
     updatedAt: timestamp,
     riskScore: 0.1
   };
 }
 
-function makeDecision(input: ServerSeededDemoInput, intent: MarketIntent, index: number): Decision {
+function makeDecision(input: ServerSeededDemoInput, intent: MarketIntent, index: number, marketRate?: number): Decision {
   const pair = swapPairForIndex(input.options, index);
+  const quoteLabel = marketRate ? `market quote ${marketRate.toFixed(6)} ${pair.toToken}/${pair.fromToken}` : `configured rate ${pair.rate}`;
   return {
     id: stableId("server-decision", `${input.runId}:${index}`),
     intentId: intent.id,
     action: "EXECUTE_DIRECTLY",
-    reason: `Wallet swap agent selected ${pair.fromToken}->${pair.toToken} execution ${index}/${input.options.executions}: configured rate ${pair.rate} and deployer limits passed.`,
+    reason: `Wallet swap agent selected ${pair.fromToken}->${pair.toToken} execution ${index}/${input.options.executions}: ${quoteLabel} and deployer limits passed.`,
     expectedProfitPct: input.config.minProfitThreshold,
     createdAt: now()
   };
 }
 
-function makeNegotiation(input: ServerSeededDemoInput, intent: MarketIntent, index: number): NegotiationMessage {
+function makeNegotiation(input: ServerSeededDemoInput, intent: MarketIntent, index: number, marketRate?: number): NegotiationMessage {
   const pair = swapPairForIndex(input.options, index);
+  const quoteAmount = marketRate ? Math.max(1, Math.trunc(input.options.amount * marketRate)) : Math.max(1, Math.trunc(input.options.amount * pair.rate));
   return {
     id: stableId("server-negotiation", `${input.runId}:${index}`),
     intentId: intent.id,
     counterparty: intent.counterparty,
     direction: "outbound",
-    body: `Server seeded agent prepared wallet swap ${index}/${input.options.executions}: ${input.options.amount} ${pair.fromToken} -> ${Math.trunc(input.options.amount * pair.rate)} ${pair.toToken}.`,
+    body: `Server seeded agent prepared wallet swap ${index}/${input.options.executions}: ${input.options.amount} ${pair.fromToken} -> ${quoteAmount} ${pair.toToken}.`,
     status: "simulated",
     mode: input.config.mode,
     createdAt: now()
@@ -207,14 +211,20 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
 
   let completed = 0;
   let failed = 0;
+  const marketAssets = adapter.getWalletAssets ? await adapter.getWalletAssets().catch(() => []) : [];
+  const marketPrices = buildMarketPriceMap(marketAssets ?? []);
   store.setRunning(true);
   store.saveLog({ id: stableId("log", `${runId}:start`), level: "info", rule: "RUN_GATE", message: `Server seeded wallet demo started: ${options.executions} autonomous executions queued.`, createdAt: now() });
+  if (marketPrices.size === 0) {
+    store.saveLog({ id: stableId("log", `${runId}:market`), level: "warn", rule: "MARKET_PRICE", message: "Live market prices were unavailable; execution rules still use configured swap rates.", createdAt: now() });
+  }
 
   for (let index = 1; index <= options.executions; index += 1) {
     const pair = swapPairForIndex(options, index);
-    const intent = makeIntent(input, index);
-    const decision = makeDecision(input, intent, index);
-    const negotiation = makeNegotiation(input, intent, index);
+    const marketRate = resolveMarketRate(pair.fromToken, pair.toToken, marketPrices);
+    const intent = makeIntent(input, index, marketRate);
+    const decision = makeDecision(input, intent, index, marketRate);
+    const negotiation = makeNegotiation(input, intent, index, marketRate);
     const idempotencyKey = stableId("server-idem", `${runId}:${index}`);
     store.saveIntents([intent]);
     store.saveDecision(decision);
@@ -229,8 +239,8 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
           fromToken: pair.fromToken,
           toToken: pair.toToken,
           fromAmount: options.amount,
-          toAmount: String(Math.max(1, Math.trunc(options.amount * pair.rate))),
-          rate: pair.rate,
+          toAmount: String(Math.max(1, Math.trunc(options.amount * (marketRate ?? pair.rate)))),
+          rate: marketRate ?? pair.rate,
           recipient: options.counterparty
         }
       });

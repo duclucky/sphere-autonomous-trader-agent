@@ -105,11 +105,11 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
         token: "BTC",
         fromToken: "BTC",
         toToken: "UCT",
-        rate: 1,
+        rate: 60000,
         swapPairs: [
-          { fromToken: "BTC", toToken: "UCT", rate: 1 },
-          { fromToken: "ETH", toToken: "UCT", rate: 1 },
-          { fromToken: "SOL", toToken: "UCT", rate: 1 }
+          { fromToken: "BTC", toToken: "UCT", rate: 60000 },
+          { fromToken: "ETH", toToken: "UCT", rate: 3000 },
+          { fromToken: "SOL", toToken: "UCT", rate: 150 }
         ]
       }
     }
@@ -121,8 +121,8 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
       side: "sell",
       token: "BTC",
       amount: 1,
-      price: 1,
-      fairValue: 1.03,
+      price: 60000,
+      fairValue: 61800,
       keywords: ["wallet-swap", "testnet"],
       updatedAt: now,
       riskScore: 0.18
@@ -133,7 +133,7 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
       id: "demo-decision",
       intentId: "demo-profitable-intent",
       action: "EXECUTE_DIRECTLY",
-      reason: "Wallet swap rule passed: BTC->UCT, amount within cap, configured edge >= threshold",
+      reason: "Wallet swap rule passed: BTC->UCT, amount within cap, market quote >= threshold",
       expectedProfitPct: 0.03,
       createdAt: now
     }
@@ -164,9 +164,9 @@ export function demoDashboardState(): AgentState & { status: StatusResponse } {
       counterparty: "sphere-swap",
       createdAt: now,
       note: "Static wallet swap preview. Real backend sends input token then mints output token.",
-      quotedRate: 1,
-      executedRate: 1.125,
-      realizedProfitPct: 0.125
+      quotedRate: 60000,
+      executedRate: 61800,
+      realizedProfitPct: 0.03
     }
   ];
   const logs: LogEntry[] = [

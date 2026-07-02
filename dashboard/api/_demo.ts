@@ -36,11 +36,11 @@ export function statusPayload() {
         token: "BTC",
         fromToken: "BTC",
         toToken: "UCT",
-        rate: 1,
+        rate: 60000,
         swapPairs: [
-          { fromToken: "BTC", toToken: "UCT", rate: 1 },
-          { fromToken: "ETH", toToken: "UCT", rate: 1 },
-          { fromToken: "SOL", toToken: "UCT", rate: 1 }
+          { fromToken: "BTC", toToken: "UCT", rate: 60000 },
+          { fromToken: "ETH", toToken: "UCT", rate: 3000 },
+          { fromToken: "SOL", toToken: "UCT", rate: 150 }
         ]
       }
     }
@@ -55,8 +55,8 @@ export function intentsPayload() {
       side: "sell",
       token: "BTC",
       amount: 1,
-      price: 1,
-      fairValue: 1.03,
+      price: 60000,
+      fairValue: 61800,
       keywords: ["wallet-swap", "testnet"],
       updatedAt: now(),
       riskScore: 0.18
@@ -82,7 +82,7 @@ export function decisionsPayload() {
       id: "vercel-demo-decision-negotiate",
       intentId: "vercel-demo-profitable-negotiate",
       action: "EXECUTE_DIRECTLY",
-      reason: "Wallet swap rule passed: BTC->UCT, amount within cap, configured edge >= threshold",
+      reason: "Wallet swap rule passed: BTC->UCT, amount within cap, market quote >= threshold",
       expectedProfitPct: 0.03,
       createdAt: now()
     },
@@ -104,7 +104,7 @@ export function negotiationsPayload() {
       intentId: "vercel-demo-profitable-negotiate",
       counterparty: "sphere-swap",
       direction: "outbound",
-      body: "Agent prepares wallet swap preview: send BTC to sphere-swap, mint UCT output.",
+      body: "Agent prepares wallet swap preview: send BTC to sphere-swap at market quote, mint UCT output.",
       status: "simulated",
       mode: "dry-run",
       createdAt: now()
@@ -137,9 +137,9 @@ export function executionsPayload() {
       counterparty: "sphere-swap",
       createdAt: now(),
       note: "Vercel mock wallet swap preview. Render backend performs send + mintFungibleToken.",
-      quotedRate: 1,
-      executedRate: 1.125,
-      realizedProfitPct: 0.125
+      quotedRate: 60000,
+      executedRate: 61800,
+      realizedProfitPct: 0.03
     }
   ];
 }
