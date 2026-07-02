@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { DecisionTable } from "./components/DecisionTable";
-import { ExecutionTable } from "./components/ExecutionTable";
-import { IntentTable } from "./components/IntentTable";
+import { AgentTelemetryTable } from "./components/AgentTelemetryTable";
 import { LogViewer } from "./components/LogViewer";
-import { NegotiationPanel } from "./components/NegotiationPanel";
 import { OperatingRules } from "./components/OperatingRules";
 import { ReviewerDemoPanel } from "./components/ReviewerDemoPanel";
 import { demoDashboardState, fetchDashboardState, startServerSeededDemo, type StatusResponse } from "./api";
@@ -19,6 +16,18 @@ interface DashboardData {
   negotiations: NegotiationMessage[];
   executions: ExecutionRecord[];
   logs: LogEntry[];
+}
+
+function formatAverageProfit(executions: ExecutionRecord[]): string {
+  const realized = executions
+    .map((execution) => execution.realizedProfitPct)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  if (!realized.length) {
+    return "0.00%";
+  }
+  const average = realized.reduce((sum, value) => sum + value, 0) / realized.length;
+  const signed = average >= 0 ? "+" : "";
+  return `${signed}${(average * 100).toFixed(2)}%`;
 }
 
 export default function App() {
@@ -47,6 +56,9 @@ export default function App() {
     return <main className="shell"><div className="notice">{error ?? "Loading agent state..."}</div></main>;
   }
 
+  const confirmedExecutions = data.executions.filter((execution) => execution.status === "confirmed").length;
+  const failedExecutions = data.executions.filter((execution) => execution.status === "failed" || execution.status === "blocked").length;
+
   return (
     <main className="shell">
       <header className="topbar">
@@ -74,29 +86,17 @@ export default function App() {
       <details className="legacy-telemetry" open ref={telemetryRef} id="agent-telemetry">
         <summary>Agent Telemetry</summary>
         <div className="telemetry-summary">
-          <div><strong>{data.intents.length}</strong><span>intents</span></div>
-          <div><strong>{data.decisions.length}</strong><span>decisions</span></div>
-          <div><strong>{data.executions.length}</strong><span>executions</span></div>
-          <div><strong>{data.status.config.serverDemo.swapPairs.length}</strong><span>fallback pairs</span></div>
+          <div><strong>{Math.max(data.intents.length, data.executions.length)}</strong><span>swap runs</span></div>
+          <div><strong>{confirmedExecutions}</strong><span>confirmed swaps</span></div>
+          <div><strong>{failedExecutions}</strong><span>failed swaps</span></div>
+          <div><strong>{formatAverageProfit(data.executions)}</strong><span>avg realized</span></div>
         </div>
-        <p className="muted">These tables show backend agent telemetry. Use Run Backend Agent above to populate them from the Render seeded wallet and compare each row against the rule snapshot.</p>
-        <section className="telemetry-grid">
-          <div className="telemetry-cell telemetry-intents">
-            <IntentTable intents={data.intents} />
-          </div>
-          <div className="telemetry-cell telemetry-decisions">
-            <DecisionTable decisions={data.decisions} executions={data.executions} />
-          </div>
-          <div className="telemetry-cell telemetry-negotiations">
-            <NegotiationPanel negotiations={data.negotiations} />
-          </div>
-          <div className="telemetry-cell telemetry-executions">
-            <ExecutionTable executions={data.executions} />
-          </div>
-          <div className="telemetry-cell telemetry-logs">
-            <LogViewer logs={data.logs} />
-          </div>
-        </section>
+        <p className="muted">This view merges intent, decision, execution, and proof into one row per autonomous swap.</p>
+        <AgentTelemetryTable intents={data.intents} decisions={data.decisions} negotiations={data.negotiations} executions={data.executions} />
+        <details className="raw-logs">
+          <summary>Raw Technical Logs</summary>
+          <LogViewer logs={data.logs} />
+        </details>
       </details>
     </main>
   );

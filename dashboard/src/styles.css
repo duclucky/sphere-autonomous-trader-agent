@@ -235,6 +235,112 @@ small {
   margin-bottom: 8px;
 }
 
+.telemetry-table {
+  margin-top: 16px;
+}
+
+.telemetry-table .table-wrap {
+  overflow: hidden;
+}
+
+.telemetry-table table {
+  table-layout: fixed;
+}
+
+.telemetry-table th,
+.telemetry-table td {
+  overflow-wrap: anywhere;
+}
+
+.telemetry-table .col-sequence {
+  width: 68px;
+}
+
+.telemetry-table .run-sequence {
+  text-align: center;
+}
+
+.telemetry-table .run-sequence strong,
+.telemetry-table .run-sequence span,
+.cell-main,
+.cell-sub,
+.proof-id {
+  display: block;
+}
+
+.telemetry-table .run-sequence strong {
+  color: #ffad61;
+  font-size: 18px;
+}
+
+.telemetry-table .run-sequence span,
+.cell-sub {
+  margin-top: 4px;
+  color: #98a4b5;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.cell-main {
+  color: #f5f7fb;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.run-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.run-status.confirmed {
+  background: #25d38c;
+  color: #041c12;
+}
+
+.run-status.failed {
+  background: #ff6b5f;
+  color: #270703;
+}
+
+.run-status.pending {
+  background: #ffcf6d;
+  color: #271502;
+}
+
+.pill.execute {
+  background: #e3f3e3;
+  color: #19511d;
+}
+
+.empty-state {
+  color: #98a4b5;
+  text-align: center;
+}
+
+.raw-logs {
+  margin-top: 14px;
+}
+
+.raw-logs summary {
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: #08101a;
+  padding: 12px 14px;
+  color: #cbd3df;
+  font-weight: 800;
+}
+
+.raw-logs .logs {
+  margin-top: 10px;
+}
+
 .mono-cell {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 12px;
@@ -538,6 +644,7 @@ pre {
   color: #f5f7fb;
   font-size: 14px;
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .rule-card p {
@@ -545,6 +652,7 @@ pre {
   color: #98a4b5;
   font-size: 12px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .rule-trace {
@@ -560,6 +668,11 @@ pre {
 .rule-trace strong {
   color: #f5f7fb;
   min-width: 110px;
+}
+
+.rule-trace span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .controls-block {
