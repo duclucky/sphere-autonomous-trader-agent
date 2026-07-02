@@ -274,7 +274,7 @@ describe("server seeded wallet demo", () => {
     expect(store.getState().executions.map((execution) => execution.token)).toEqual(["BTC->UCT", "ETH->UCT", "SOL->UCT", "BTC->UCT", "ETH->UCT"]);
   });
 
-  it("auto-generates two-way market swap pairs from spendable wallet assets", async () => {
+  it("preserves decimal market output amounts for mixed-price swap pairs", async () => {
     const store = new LocalStore(":memory:");
     const adapter = createAdapter(undefined, [
       { coinId: "btc", symbol: "BTC", totalAmount: "2", priceUsd: 60000 },
@@ -329,6 +329,22 @@ describe("server seeded wallet demo", () => {
       1 / 60000,
       3000,
       1 / 3000
+    ]);
+    expect(adapter.requests.map((request) => request.walletSwap?.toAmount)).toEqual([
+      "20",
+      "0.05",
+      "60000",
+      "0.000016666667",
+      "3000",
+      "0.000333333333"
+    ]);
+    expect(store.getState().negotiations.map((message) => message.body)).toEqual([
+      "Server seeded agent prepared wallet swap 1/6: 1 BTC -> 20 ETH.",
+      "Server seeded agent prepared wallet swap 2/6: 1 ETH -> 0.05 BTC.",
+      "Server seeded agent prepared wallet swap 3/6: 1 BTC -> 60000 UCT.",
+      "Server seeded agent prepared wallet swap 4/6: 1 UCT -> 0.000016666667 BTC.",
+      "Server seeded agent prepared wallet swap 5/6: 1 ETH -> 3000 UCT.",
+      "Server seeded agent prepared wallet swap 6/6: 1 UCT -> 0.000333333333 ETH."
     ]);
     expect(store.getState().logs.some((log) => log.rule === "AUTO_MARKET_PAIRS" && log.message.includes("6 two-way market pairs"))).toBe(true);
   });

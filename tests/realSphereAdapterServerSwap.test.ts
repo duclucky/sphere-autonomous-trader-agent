@@ -5,6 +5,8 @@ import type { AgentConfig, Decision, MarketIntent } from "../src/storage/types";
 const sdkMocks = vi.hoisted(() => {
   const send = vi.fn();
   const mintFungibleToken = vi.fn();
+  const getTokenDecimals = vi.fn();
+  const parseTokenAmount = vi.fn();
   const sphere = {
     identity: { directAddress: "DIRECT://agent", nametag: "autointent-trader" },
     payments: {
@@ -16,6 +18,8 @@ const sdkMocks = vi.hoisted(() => {
   return {
     send,
     mintFungibleToken,
+    getTokenDecimals,
+    parseTokenAmount,
     getAssets: sphere.payments.getAssets,
     sphere,
     init: vi.fn()
@@ -24,6 +28,8 @@ const sdkMocks = vi.hoisted(() => {
 
 vi.mock("@unicitylabs/sphere-sdk", () => ({
   Sphere: { init: sdkMocks.init },
+  getTokenDecimals: sdkMocks.getTokenDecimals,
+  parseTokenAmount: sdkMocks.parseTokenAmount,
   TokenRegistry: {
     getInstance: () => ({
       getDefinitionBySymbol: (symbol: string) => {
@@ -87,12 +93,16 @@ describe("RealSphereAdapter wallet swap execution", () => {
   beforeEach(() => {
     sdkMocks.send.mockReset();
     sdkMocks.mintFungibleToken.mockReset();
+    sdkMocks.getTokenDecimals.mockReset();
+    sdkMocks.parseTokenAmount.mockReset();
     sdkMocks.getAssets.mockReset();
     sdkMocks.init.mockReset();
     sdkMocks.init.mockResolvedValue({ sphere: sdkMocks.sphere });
     sdkMocks.getAssets.mockResolvedValue([{ coinId: "btc-coin-id", symbol: "BTC", totalAmount: "10" }]);
     sdkMocks.send.mockResolvedValue({ id: "send-tx", status: "completed" });
     sdkMocks.mintFungibleToken.mockResolvedValue({ success: true, tokenId: "minted-uct" });
+    sdkMocks.getTokenDecimals.mockReturnValue(9);
+    sdkMocks.parseTokenAmount.mockImplementation((value: string, decimals: number) => BigInt(Math.trunc(Number(value) * 10 ** decimals)));
   });
 
   it("executes a wallet swap by sending input token to the swap stub and minting output token", async () => {
@@ -118,7 +128,9 @@ describe("RealSphereAdapter wallet swap execution", () => {
       coinId: "btc-coin-id",
       memo: "Autonomous wallet swap for intent-1; idempotency=idem-1; pair=BTC->UCT"
     });
-    expect(sdkMocks.mintFungibleToken).toHaveBeenCalledWith("uct-coin-id", 2n);
+    expect(sdkMocks.getTokenDecimals).toHaveBeenCalledWith("uct-coin-id");
+    expect(sdkMocks.parseTokenAmount).toHaveBeenCalledWith("2", 9);
+    expect(sdkMocks.mintFungibleToken).toHaveBeenCalledWith("uct-coin-id", 2_000_000_000n);
     expect(result).toEqual({
       txId: "send-tx+minted-uct",
       status: "confirmed",
@@ -127,5 +139,29 @@ describe("RealSphereAdapter wallet swap execution", () => {
       executedRate: 2,
       realizedProfitPct: 0
     });
+  });
+
+  it("parses decimal output amounts into token base units before minting", async () => {
+    const adapter = new RealSphereAdapter(config);
+
+    const result = await adapter.executeValueTransfer({
+      intent,
+      decision,
+      idempotencyKey: "idem-decimal",
+      walletSwap: {
+        fromToken: "BTC",
+        toToken: "UCT",
+        fromAmount: 1,
+        toAmount: "0.05",
+        rate: 0.05,
+        recipient: "sphere-swap"
+      }
+    });
+
+    expect(sdkMocks.getTokenDecimals).toHaveBeenCalledWith("uct-coin-id");
+    expect(sdkMocks.parseTokenAmount).toHaveBeenCalledWith("0.05", 9);
+    expect(sdkMocks.mintFungibleToken).toHaveBeenCalledWith("uct-coin-id", 50_000_000n);
+    expect(result.executedRate).toBe(0.05);
+    expect(result.note).toContain("minted 0.05 UCT");
   });
 });

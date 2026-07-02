@@ -22,6 +22,8 @@ export interface ServerDemoSwapPair {
   fromToken: string;
   toToken: string;
   rate: number;
+  fromDecimals?: number;
+  toDecimals?: number;
 }
 
 export interface ServerSeededDemoInput {
@@ -126,6 +128,18 @@ function now(): string {
   return new Date().toISOString();
 }
 
+function formatTokenAmount(value: number, decimals = 12): string {
+  if (!Number.isFinite(value) || value < 0) {
+    return "0";
+  }
+  const safeDecimals = Math.max(0, Math.min(18, Math.trunc(decimals)));
+  return value.toFixed(safeDecimals).replace(/\.?0+$/, "");
+}
+
+function quoteOutputAmount(amount: number, pair: ServerDemoSwapPair, marketRate?: number): string {
+  return formatTokenAmount(amount * (marketRate ?? pair.rate), pair.toDecimals ?? 12);
+}
+
 function swapPairForIndex(options: ServerSeededDemoOptions, index: number): ServerDemoSwapPair {
   const pairs = swapPairsForOptions(options);
   return pairs[(index - 1) % pairs.length];
@@ -180,7 +194,7 @@ function makeDecision(input: ServerSeededDemoInput, intent: MarketIntent, index:
 
 function makeNegotiation(input: ServerSeededDemoInput, intent: MarketIntent, index: number, marketRate?: number): NegotiationMessage {
   const pair = swapPairForIndex(input.options, index);
-  const quoteAmount = marketRate ? Math.max(1, Math.trunc(input.options.amount * marketRate)) : Math.max(1, Math.trunc(input.options.amount * pair.rate));
+  const quoteAmount = quoteOutputAmount(input.options.amount, pair, marketRate);
   return {
     id: stableId("server-negotiation", `${input.runId}:${index}`),
     intentId: intent.id,
@@ -257,7 +271,7 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
           fromToken: pair.fromToken,
           toToken: pair.toToken,
           fromAmount: options.amount,
-          toAmount: String(Math.max(1, Math.trunc(options.amount * (marketRate ?? pair.rate)))),
+          toAmount: quoteOutputAmount(options.amount, pair, marketRate),
           rate: marketRate ?? pair.rate,
           recipient: options.counterparty
         }

@@ -4,6 +4,8 @@ export interface MarketSwapPair {
   fromToken: string;
   toToken: string;
   rate: number;
+  fromDecimals?: number;
+  toDecimals?: number;
 }
 
 function normalizeToken(value: string): string {
@@ -49,7 +51,8 @@ export function buildAutoMarketSwapPairs(assets: SpendableCoinAsset[], minimumIn
     .filter((asset) => asset.symbol && isPositiveFinite(asset.priceUsd) && amountToNumber(asset.totalAmount) >= minimumInputAmount)
     .map((asset) => ({
       symbol: normalizeToken(asset.symbol),
-      priceUsd: asset.priceUsd as number
+      priceUsd: asset.priceUsd as number,
+      decimals: typeof asset.decimals === "number" && Number.isInteger(asset.decimals) && asset.decimals >= 0 ? asset.decimals : undefined
     }))
     .filter((asset, index, all) => all.findIndex((candidate) => candidate.symbol === asset.symbol) === index);
 
@@ -58,8 +61,8 @@ export function buildAutoMarketSwapPairs(assets: SpendableCoinAsset[], minimumIn
     for (let rightIndex = leftIndex + 1; rightIndex < eligibleAssets.length; rightIndex += 1) {
       const left = eligibleAssets[leftIndex];
       const right = eligibleAssets[rightIndex];
-      pairs.push({ fromToken: left.symbol, toToken: right.symbol, rate: left.priceUsd / right.priceUsd });
-      pairs.push({ fromToken: right.symbol, toToken: left.symbol, rate: right.priceUsd / left.priceUsd });
+      pairs.push({ fromToken: left.symbol, toToken: right.symbol, rate: left.priceUsd / right.priceUsd, fromDecimals: left.decimals, toDecimals: right.decimals });
+      pairs.push({ fromToken: right.symbol, toToken: left.symbol, rate: right.priceUsd / left.priceUsd, fromDecimals: right.decimals, toDecimals: left.decimals });
     }
   }
   return pairs;

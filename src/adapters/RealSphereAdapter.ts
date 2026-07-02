@@ -178,7 +178,7 @@ export class RealSphereAdapter implements SphereAdapter {
     const fromCoinId = await this.resolveSpendableCoinId(sphere, plan.fromToken, plan.fromAmount);
     const toCoinId = await this.resolveRegistryCoinId(plan.toToken);
     const fromAmount = String(Math.trunc(plan.fromAmount));
-    const toAmount = BigInt(plan.toAmount);
+    const toAmount = await this.parseTokenAmount(plan.toAmount, toCoinId);
     let sendResult: { id?: string; status: string; deliveryPending?: boolean };
     try {
       sendResult = await sphere.payments.send({
@@ -273,6 +273,11 @@ export class RealSphereAdapter implements SphereAdapter {
     const registry = TokenRegistry.getInstance();
     const definition = registry.getDefinitionBySymbol?.(preferredToken);
     return definition?.id ?? preferredToken;
+  }
+
+  private async parseTokenAmount(amount: string, coinId: string): Promise<bigint> {
+    const { getTokenDecimals, parseTokenAmount } = await import("@unicitylabs/sphere-sdk");
+    return parseTokenAmount(amount, getTokenDecimals(coinId));
   }
 
   private failUnverified(functionName: string): never {

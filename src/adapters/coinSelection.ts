@@ -2,6 +2,7 @@ export interface SpendableCoinAsset {
   coinId: string;
   symbol: string;
   totalAmount: string;
+  decimals?: number;
   priceUsd?: number | null;
   fiatValueUsd?: number | null;
 }
