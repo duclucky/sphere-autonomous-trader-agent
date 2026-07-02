@@ -22,9 +22,10 @@ export function OperatingRules({ status }: OperatingRulesProps) {
     { label: "Network", value: status.config.network, detail: "Only Testnet v2 is allowed." },
     { label: "Mode", value: modeLabel, detail: "Real mode performs the same send + mint flow used by the Sphere wallet swap screen." },
     { label: "Source wallet", value: sourceWallet, detail: walletAddress },
-    { label: "Swap rotation", value: swapRotation, detail: `Round-robin across ${swapPairs.length} configured pair(s). Allowed scan tokens: ${status.config.allowedTokens.join(", ")}.` },
+    { label: "Auto market pairs", value: "wallet assets", detail: "Live runs generate two-way pairs from spendable wallet assets with market prices." },
+    { label: "Fallback pairs", value: swapRotation, detail: `Used only when wallet market data is unavailable. Configured fallback count: ${swapPairs.length}.` },
     { label: "Swap recipient", value: status.config.serverDemo.counterparty, detail: "The input token is sent to the same swap stub used by the wallet UI." },
-    { label: "Quote rules", value: quoteRules, detail: `Minimum configured edge is ${(status.config.minProfitThreshold * 100).toFixed(2)}%.` },
+    { label: "Fallback quote rules", value: quoteRules, detail: `Market quotes override these rates when available. Minimum configured edge is ${(status.config.minProfitThreshold * 100).toFixed(2)}%.` },
     { label: "Execution size", value: `${status.config.serverDemo.amount} base unit each`, detail: `${status.config.serverDemo.executions} max swaps; demo cap is ${formatCap(status.config.serverDemo.dailyCap)}.` }
   ];
 

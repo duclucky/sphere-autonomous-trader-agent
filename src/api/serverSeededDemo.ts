@@ -1,5 +1,5 @@
 import type { SphereAdapter } from "../adapters/SphereAdapter";
-import { buildMarketPriceMap, resolveMarketRate } from "../market/quotes";
+import { buildAutoMarketSwapPairs, buildMarketPriceMap, resolveMarketRate } from "../market/quotes";
 import type { LocalStore } from "../storage/LocalStore";
 import type { AgentConfig, Decision, ExecutionRecord, MarketIntent, NegotiationMessage } from "../storage/types";
 import { stableId } from "../utils/ids";
@@ -135,6 +135,18 @@ function swapPairsForOptions(options: ServerSeededDemoOptions): ServerDemoSwapPa
   return options.swapPairs?.length ? options.swapPairs : [{ fromToken: options.fromToken, toToken: options.toToken, rate: options.rate }];
 }
 
+function optionsWithSwapPairs(options: ServerSeededDemoOptions, swapPairs: ServerDemoSwapPair[]): ServerSeededDemoOptions {
+  const primaryPair = swapPairs[0] ?? { fromToken: options.fromToken, toToken: options.toToken, rate: options.rate };
+  return {
+    ...options,
+    token: primaryPair.fromToken,
+    fromToken: primaryPair.fromToken,
+    toToken: primaryPair.toToken,
+    rate: primaryPair.rate,
+    swapPairs
+  };
+}
+
 function makeIntent(input: ServerSeededDemoInput, index: number, marketRate?: number): MarketIntent {
   const timestamp = now();
   const pair = swapPairForIndex(input.options, index);
@@ -213,18 +225,24 @@ export async function runServerSeededDemo(input: ServerSeededDemoInput): Promise
   let failed = 0;
   const marketAssets = adapter.getWalletAssets ? await adapter.getWalletAssets().catch(() => []) : [];
   const marketPrices = buildMarketPriceMap(marketAssets ?? []);
+  const autoSwapPairs = buildAutoMarketSwapPairs(marketAssets ?? [], options.amount);
+  const runtimeOptions = autoSwapPairs.length > 0 ? optionsWithSwapPairs(options, autoSwapPairs) : options;
+  const runtimeInput = { ...input, options: runtimeOptions };
   store.setRunning(true);
   store.saveLog({ id: stableId("log", `${runId}:start`), level: "info", rule: "RUN_GATE", message: `Server seeded wallet demo started: ${options.executions} autonomous executions queued.`, createdAt: now() });
+  if (autoSwapPairs.length > 0) {
+    store.saveLog({ id: stableId("log", `${runId}:auto-pairs`), level: "info", rule: "AUTO_MARKET_PAIRS", message: `Generated ${autoSwapPairs.length} two-way market pairs from spendable wallet assets.`, createdAt: now() });
+  }
   if (marketPrices.size === 0) {
     store.saveLog({ id: stableId("log", `${runId}:market`), level: "warn", rule: "MARKET_PRICE", message: "Live market prices were unavailable; execution rules still use configured swap rates.", createdAt: now() });
   }
 
   for (let index = 1; index <= options.executions; index += 1) {
-    const pair = swapPairForIndex(options, index);
+    const pair = swapPairForIndex(runtimeOptions, index);
     const marketRate = resolveMarketRate(pair.fromToken, pair.toToken, marketPrices);
-    const intent = makeIntent(input, index, marketRate);
-    const decision = makeDecision(input, intent, index, marketRate);
-    const negotiation = makeNegotiation(input, intent, index, marketRate);
+    const intent = makeIntent(runtimeInput, index, marketRate);
+    const decision = makeDecision(runtimeInput, intent, index, marketRate);
+    const negotiation = makeNegotiation(runtimeInput, intent, index, marketRate);
     const idempotencyKey = stableId("server-idem", `${runId}:${index}`);
     store.saveIntents([intent]);
     store.saveDecision(decision);

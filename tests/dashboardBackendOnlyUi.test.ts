@@ -27,6 +27,8 @@ describe("backend-only dashboard UI", () => {
     expect(appSource).toContain("telemetry-summary");
     expect(appSource).toContain("OperatingRules");
     expect(operatingRulesSource).toContain("Operating Rules");
+    expect(operatingRulesSource).toContain("Auto market pairs");
+    expect(operatingRulesSource).toContain("spendable wallet assets");
     expect(logViewerSource).toContain("rule tag");
     expect(logViewerSource).toContain("Rule");
   });

@@ -274,6 +274,65 @@ describe("server seeded wallet demo", () => {
     expect(store.getState().executions.map((execution) => execution.token)).toEqual(["BTC->UCT", "ETH->UCT", "SOL->UCT", "BTC->UCT", "ETH->UCT"]);
   });
 
+  it("auto-generates two-way market swap pairs from spendable wallet assets", async () => {
+    const store = new LocalStore(":memory:");
+    const adapter = createAdapter(undefined, [
+      { coinId: "btc", symbol: "BTC", totalAmount: "2", priceUsd: 60000 },
+      { coinId: "eth", symbol: "ETH", totalAmount: "2", priceUsd: 3000 },
+      { coinId: "uct", symbol: "UCT", totalAmount: "1000", priceUsd: 1 }
+    ]);
+    adapter.executeValueTransfer = async (request) => {
+      adapter.requests.push(request);
+      return {
+        txId: `tx-auto-${adapter.requests.length}`,
+        status: "submitted",
+        note: "auto market quote echoed",
+        quotedRate: request.walletSwap?.rate,
+        executedRate: request.walletSwap?.rate,
+        realizedProfitPct: 0
+      };
+    };
+
+    const result = await runServerSeededDemo({
+      config,
+      store,
+      adapter,
+      options: {
+        enabled: true,
+        executions: 6,
+        maxRuns: 1,
+        amount: 1,
+        dailyCap: 6,
+        counterparty: "sphere-swap",
+        token: "BTC",
+        fromToken: "BTC",
+        toToken: testTokenSymbol,
+        rate: 1,
+        swapPairs: [{ fromToken: "BTC", toToken: testTokenSymbol, rate: 1 }]
+      },
+      runId: "server-run-auto-pairs"
+    });
+
+    expect(result.status).toBe("complete");
+    expect(adapter.requests.map((request) => `${request.walletSwap?.fromToken}->${request.walletSwap?.toToken}`)).toEqual([
+      "BTC->ETH",
+      "ETH->BTC",
+      "BTC->UCT",
+      "UCT->BTC",
+      "ETH->UCT",
+      "UCT->ETH"
+    ]);
+    expect(adapter.requests.map((request) => request.walletSwap?.rate)).toEqual([
+      20,
+      0.05,
+      60000,
+      1 / 60000,
+      3000,
+      1 / 3000
+    ]);
+    expect(store.getState().logs.some((log) => log.rule === "AUTO_MARKET_PAIRS" && log.message.includes("6 two-way market pairs"))).toBe(true);
+  });
+
   it("stops and records a failed execution when the backend wallet errors", async () => {
     const store = new LocalStore(":memory:");
     const adapter = createAdapter(3);

@@ -77,7 +77,7 @@ export default function App() {
           <div><strong>{data.intents.length}</strong><span>intents</span></div>
           <div><strong>{data.decisions.length}</strong><span>decisions</span></div>
           <div><strong>{data.executions.length}</strong><span>executions</span></div>
-          <div><strong>{data.status.config.serverDemo.swapPairs.length}</strong><span>swap pairs</span></div>
+          <div><strong>{data.status.config.serverDemo.swapPairs.length}</strong><span>fallback pairs</span></div>
         </div>
         <p className="muted">These tables show backend agent telemetry. Use Run Backend Agent above to populate them from the Render seeded wallet and compare each row against the rule snapshot.</p>
         <section className="telemetry-grid">
